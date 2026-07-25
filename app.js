@@ -117,15 +117,8 @@
   const categoriesEditList    = document.getElementById('categoriesEditList');
   const saveCategoriesModalBtn = document.getElementById('saveCategoriesModalBtn');
 
-  const syncBtn         = document.getElementById('syncBtn');
-  const syncStatusDot   = document.getElementById('syncStatusDot');
-  const syncModal       = document.getElementById('syncModal');
-  const closeSyncBtn    = document.getElementById('closeSyncBtn');
-  const syncCodeInput   = document.getElementById('syncCodeInput');
-  const copySyncLinkBtn = document.getElementById('copySyncLinkBtn');
-  const customSyncCodeInput = document.getElementById('customSyncCodeInput');
-  const joinSyncCodeBtn = document.getElementById('joinSyncCodeBtn');
-  const forceSyncBtn    = document.getElementById('forceSyncBtn');
+  const syncStatusDot   = { className: '', classList: { add: ()=>{}, remove: ()=>{} } }; // removed from UI
+  const syncBtn         = { title: '' }; // removed from UI
 
   // =========================================================================
   // INIT
@@ -613,24 +606,13 @@ window.dispatchEvent(new CustomEvent('firebase-ready'));
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <span class="item-title">${escapeHtml(item.name)}</span>
-      </div>
-      <div class="item-right-actions">
-        <button class="item-btn delete-btn" title="Törlés">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-        </button>
       </div>`;
     wrapper.appendChild(card);
 
     card.addEventListener('click', e => {
       if (isDraggingCategory) return;
-      if (e.target.closest('.delete-btn')) return;
       if (card.dataset.hasSwiped === 'true') { delete card.dataset.hasSwiped; return; }
       toggleItemChecked(item.id);
-    });
-
-    card.querySelector('.delete-btn').addEventListener('click', e => {
-      e.stopPropagation();
-      swipeDelete(wrapper, item.id);
     });
 
     setupSwipe(card, wrapper, item.id);
@@ -807,24 +789,7 @@ window.dispatchEvent(new CustomEvent('firebase-ready'));
     saveCategoriesModalBtn.addEventListener('click', saveCategoriesFromModal);
     categoriesModal.addEventListener('click', e => { if (e.target === categoriesModal) categoriesModal.classList.add('hidden'); });
 
-    // Sync
-    syncBtn.addEventListener('click', () => { renderSyncModal(); syncModal.classList.remove('hidden'); });
-    closeSyncBtn.addEventListener('click', () => syncModal.classList.add('hidden'));
-    syncModal.addEventListener('click', e => { if (e.target === syncModal) syncModal.classList.add('hidden'); });
-
-    copySyncLinkBtn.addEventListener('click', () => {
-      const url = window.location.href.split('?')[0];
-      navigator.clipboard.writeText(url)
-        .then(() => alert('Hivatkozás másolva! Küld át a másik eszközödre és nyisd meg ott.'))
-        .catch(() => alert('URL: ' + url));
-    });
-
-    joinSyncCodeBtn.addEventListener('click', () => {
-      const code = customSyncCodeInput.value.trim();
-      if (code) { window.location.href = code; }
-    });
-
-    forceSyncBtn.addEventListener('click', () => { syncModal.classList.add('hidden'); });
+    // Sync button removed from UI - no event listeners needed
   }
 
   // =========================================================================

@@ -21,13 +21,15 @@
           <h1>Bevásárló lista</h1>
         </div>
         <div class="header-actions">
-          <!-- Cloud Sync Button & Indicator -->
-          <button id="syncBtn" class="icon-btn sync-indicator" title="Felhő Szinkronizáció (Élő)" aria-label="Szinkronizáció">
-            <svg class="sync-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/><path d="M2.5 22v-6h6"/><path d="M2.66 8.43a10 10 0 0 1 .57 8.38l-5.67 5.67"/></svg>
-            <span class="sync-pulse-dot" id="syncStatusDot"></span>
-          </button>
-          <button id="manageCategoriesBtn" class="icon-btn" title="Kategóriák átnevezése & rendezése" aria-label="Kategóriák">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <button id="manageCategoriesBtn" class="icon-btn" title="Kategóriák kezelése" aria-label="Kategóriák">
+            <!-- Grid+Search icon (4 squares + lupa) -->
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="8" height="8" rx="2"/>
+              <rect x="14" y="2" width="8" height="8" rx="2"/>
+              <rect x="2" y="14" width="8" height="8" rx="2"/>
+              <circle cx="17.5" cy="17.5" r="3"/>
+              <path d="m21 21-1.5-1.5"/>
+            </svg>
           </button>
           <button id="catalogBtn" class="icon-btn" title="Könyvtár / Előzmények" aria-label="Könyvtár">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
@@ -174,47 +176,7 @@
       </div>
     </div>
 
-    <!-- Cloud Sync Modal -->
-    <div id="syncModal" class="modal-overlay hidden">
-      <div class="modal-card">
-        <div class="modal-header">
-          <div class="modal-title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            <h3>Szerver Szinkronizáció</h3>
-          </div>
-          <button class="close-modal-btn" id="closeSyncBtn" aria-label="Bezárás">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-          </button>
-        </div>
-        
-        <div class="sync-modal-body">
-          <p class="modal-subtext">Minden módosítás automatikusan mentődik a szerverre. Használd ugyanazt a szinkron kódot a többi eszközödön is!</p>
 
-          <div class="sync-code-box">
-            <label>A te egyedi szinkron kódod:</label>
-            <div class="sync-input-group">
-              <input type="text" id="syncCodeInput" readonly>
-              <button id="copySyncLinkBtn" class="secondary-btn">Link másolása</button>
-            </div>
-          </div>
-
-          <div class="sync-join-box">
-            <label>Másik eszköz szinkron kódjának megadása:</label>
-            <div class="sync-input-group">
-              <input type="text" id="customSyncCodeInput" placeholder="Írd be ide a szinkron kódot...">
-              <button id="joinSyncCodeBtn" class="primary-btn">Csatlakozás</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button id="forceSyncBtn" class="secondary-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            Frissítés most
-          </button>
-        </div>
-      </div>
-    </div>
 
   </div>
 
