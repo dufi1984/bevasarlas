@@ -378,7 +378,7 @@
 
   function renderToBuy() {
     const active = items.filter(i => !i.checked);
-    toBuyCount.textContent = active.length;
+    if (toBuyCount) toBuyCount.textContent = active.length;
     toBuyListGrouped.innerHTML = '';
 
     if (active.length === 0) {
@@ -408,8 +408,7 @@
           <span class="category-dot" style="background-color:${category.color}"></span>
           <span>${esc(category.name)}</span>
         </div>
-      </div>
-      <span class="category-item-count">${catItems.length} db</span>`;
+      </div>`;
 
     group.appendChild(header);
     catItems.forEach(item => group.appendChild(makeItemCard(item)));
@@ -421,7 +420,7 @@
   // =========================================================================
   function renderPurchased() {
     const purchased = items.filter(i => i.checked);
-    purchasedCount.textContent = purchased.length;
+    if (purchasedCount) purchasedCount.textContent = purchased.length;
     purchasedList.innerHTML = '';
 
     if (purchased.length === 0) {
