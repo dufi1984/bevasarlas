@@ -376,6 +376,32 @@
     renderPurchased();
   }
 
+  function hexToRgba(hex, alpha) {
+    hex = (hex || '#10b981').replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+    const num = parseInt(hex, 16);
+    if (isNaN(num)) return `rgba(16, 185, 129, ${alpha})`;
+    const r = (num >> 16) & 255;
+    const g = (num >> 8) & 255;
+    const b = num & 255;
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function getCategoryOrder(colorId) {
+    const idx = categories.findIndex(c => c.id === colorId);
+    return idx >= 0 ? idx : 999;
+  }
+
+  function sortItemsByCatAndName(list) {
+    sortCats();
+    return [...list].sort((a, b) => {
+      const catOrderA = getCategoryOrder(a.colorId || 'green');
+      const catOrderB = getCategoryOrder(b.colorId || 'green');
+      if (catOrderA !== catOrderB) return catOrderA - catOrderB;
+      return a.name.localeCompare(b.name, 'hu');
+    });
+  }
+
   function renderToBuy() {
     const active = items.filter(i => !i.checked);
     if (toBuyCount) toBuyCount.textContent = active.length;
@@ -387,32 +413,9 @@
       return;
     }
     toBuyEmpty.classList.add('hidden');
-    sortCats();
 
-    categories.forEach(cat => {
-      const catItems = active.filter(i => (i.colorId || 'green') === cat.id);
-      if (catItems.length > 0) toBuyListGrouped.appendChild(makeCategoryGroup(cat, catItems));
-    });
-  }
-
-  function makeCategoryGroup(category, catItems) {
-    const group = document.createElement('div');
-    group.className = 'category-group';
-    group.dataset.categoryId = category.id;
-
-    const header = document.createElement('div');
-    header.className = 'category-group-header';
-    header.innerHTML = `
-      <div class="category-header-left">
-        <div class="category-title-badge">
-          <span class="category-dot" style="background-color:${category.color}"></span>
-          <span>${esc(category.name)}</span>
-        </div>
-      </div>`;
-
-    group.appendChild(header);
-    catItems.forEach(item => group.appendChild(makeItemCard(item)));
-    return group;
+    const sorted = sortItemsByCatAndName(active);
+    sorted.forEach(item => toBuyListGrouped.appendChild(makeItemCard(item)));
   }
 
   // =========================================================================
@@ -428,18 +431,23 @@
       purchasedEmpty.classList.remove('hidden');
     } else {
       purchasedEmpty.classList.add('hidden');
-      purchased.forEach(item => purchasedList.appendChild(makeItemCard(item)));
+      const sorted = sortItemsByCatAndName(purchased);
+      sorted.forEach(item => purchasedList.appendChild(makeItemCard(item)));
     }
     purchasedSection.classList.toggle('collapsed', isPurchasedCollapsed);
   }
 
   // =========================================================================
-  // ITEM KÁRTYA (nincs színpötty a tétel előtt, nincs kuka gomb - csak swipe törlés)
+  // ITEM KÁRTYA (3px bal oldali sáv + kategória szerinti háttér színezés)
   // =========================================================================
   function makeItemCard(item) {
+    const cat = categories.find(c => c.id === (item.colorId || 'green')) || categories[0] || { color: '#10b981' };
     const card = document.createElement('div');
     card.className = `item-card ${item.checked ? 'purchased' : ''}`;
     card.dataset.id = item.id;
+    card.style.borderLeft = `3px solid ${cat.color}`;
+    card.style.backgroundColor = hexToRgba(cat.color, 0.07);
+
     card.innerHTML = `
       <div class="item-left">
         <span class="item-title">${esc(item.name)}</span>
