@@ -323,13 +323,19 @@
     if (matches.length === 0) {
       const cat = categories.find(c => c.id === selectedColor) || categories[0];
       const row = mkACRow(cat.color, `"${esc(searchInput.value.trim())}" – új tétel hozzáadása`, '+ Hozzáadás');
-      row.addEventListener('click', () => addItem(searchInput.value, selectedColor));
+      row.addEventListener('click', (e) => {
+        e.stopPropagation();
+        addItem(searchInput.value, selectedColor);
+      });
       suggestionsList.appendChild(row);
     } else {
       matches.forEach(m => {
         const cat = categories.find(c => c.id === m.colorId) || categories[0];
         const row = mkACRow(cat.color, esc(m.name), '+ Listára');
-        row.addEventListener('click', () => addItem(m.name, m.colorId));
+        row.addEventListener('click', (e) => {
+          e.stopPropagation();
+          addItem(m.name, m.colorId);
+        });
         suggestionsList.appendChild(row);
       });
     }

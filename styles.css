@@ -166,6 +166,7 @@ body {
 .input-section {
   position: relative;
   margin-bottom: 20px;
+  z-index: 100;
 }
 
 .search-input-wrapper {
@@ -298,8 +299,14 @@ body {
   box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
 }
 
-.hidden {
+.hidden,
+.color-selector-wrapper.hidden,
+.autocomplete-dropdown.hidden {
   display: none !important;
+  visibility: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
 }
 
 /* Autocomplete Dropdown */
@@ -313,7 +320,7 @@ body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
-  z-index: 100;
+  z-index: 200;
   overflow: hidden;
   max-height: 240px;
   overflow-y: auto;
