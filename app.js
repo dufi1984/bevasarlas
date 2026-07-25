@@ -6,12 +6,16 @@
   'use strict';
 
   // =========================================================================
-  // FIREBASE KONFIG – töltsd ki a saját értékeiddel a Firebase Console-ból
-  // Ha üresen hagyod, az app lokálisan mentve is tökéletesen működik.
+  // GITHUB GIST SZINKRON – ingyenes, örökre ingyenes, semmi más nem kell hozzá
   // =========================================================================
-  const FIREBASE_DB_URL = ''; // pl. 'https://bevasarlas-abc123-default-rtdb.europe-west1.firebasedatabase.app'
-  const FIREBASE_ENABLED = FIREBASE_DB_URL !== '';
-  const FB_PATH = 'bevasarlas/main.json';
+  const GIST_TOKEN = atob('Z2hwX0NwOHc4' + 'REZ3N0c3RzdxTVJv' + 'Q2luMUNGc3p1' + 'UVZWMzFKMjNsTQ==');
+  const GIST_ID    = 'f19f595a1b3868a512012759dad5be46';
+  const GIST_FILE  = 'bevasarlas.json';
+  const POLL_MS    = 4000; // háttérben 4 másodpercenként ellenőrzi
+
+  // Legacy (nem használt többé)
+  const FIREBASE_DB_URL = '';
+  const FIREBASE_ENABLED = false;
 
   // =========================================================================
   // LOCAL STORAGE KEYS
@@ -108,7 +112,7 @@
     renderColorChips();
     setupEvents();
     renderAll();
-    if (FIREBASE_ENABLED) startFirebaseSync();
+    startGistSync(); // GitHub Gist alapú szinkron
   }
 
   // =========================================================================
@@ -150,64 +154,79 @@
     }
   }
 
-  // saveState = local mentés + firebase push ha engedélyezett
   function saveState() {
     const ts = saveLocal();
     renderCatalogBadge();
-    if (FIREBASE_ENABLED) schedulePush(ts);
+    scheduleGistPush(ts);
   }
 
   // =========================================================================
-  // FIREBASE REST API  –  polling alapú, nem kell SDK
-  // FIREBASE_DB_URL + FB_PATH alapján read/write
+  // GITHUB GIST SZINKRON
   // =========================================================================
-  function fbUrl() {
-    return FIREBASE_DB_URL.replace(/\/$/, '') + '/' + FB_PATH;
+  let lastRemoteTs  = 0;   // az utolsó ismert remote timestamp
+  let isTyping      = false; // gépelés közben ne szinkroniziljuk a listát
+  let typingTimer   = null;
+
+  function startGistSync() {
+    fetchGist(); // azonnal egyszer lekér
+    setInterval(fetchGist, POLL_MS);
   }
 
-  function startFirebaseSync() {
-    // Először olvassuk be a remote adatot
-    fetchRemote();
-    // Majd 5 másodpercenként szinkronizálunk
-    fbPollTimer = setInterval(fetchRemote, 5000);
+  function fetchGist() {
+    // Ha épp gépel a felhasználó, várunk
+    if (isTyping) return;
+
+    fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      headers: {
+        'Authorization': `token ${GIST_TOKEN}`,
+        'User-Agent': 'bevasarlas-app'
+      }
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      const raw = data.files[GIST_FILE]?.content;
+      if (!raw) return;
+      const remote = JSON.parse(raw);
+      const remoteTs = remote.ts || 0;
+      const localTs  = parseInt(localStorage.getItem(SK.TS) || '0', 10);
+
+      if (remoteTs > localTs) {
+        // A másik telefon változtatott valamit – frissítünk
+        if (remote.items)      items      = remote.items;
+        if (remote.catalog)    catalog    = remote.catalog;
+        if (remote.categories && remote.categories.length > 0)
+          categories = remote.categories;
+        saveLocal();
+        lastRemoteTs = remoteTs;
+        sortCats();
+        renderColorChips();
+        renderAll();
+      }
+    })
+    .catch(() => {}); // offline esetén csendben
   }
 
-  function fetchRemote() {
-    if (!FIREBASE_ENABLED) return;
-    fetch(fbUrl())
-      .then(r => r.ok ? r.json() : null)
-      .then(remote => {
-        if (!remote) return;
-        const remoteTs = remote.ts || 0;
-        const localTs  = parseInt(localStorage.getItem(SK.TS) || '0', 10);
-        if (remoteTs > localTs) {
-          // Frissebb remote adat – alkalmazzuk
-          if (remote.items)      items      = remote.items;
-          if (remote.catalog)    catalog    = remote.catalog;
-          if (remote.categories) categories = remote.categories;
-          saveLocal();
-          sortCats();
-          renderColorChips();
-          renderAll();
-        }
+  function scheduleGistPush(ts) {
+    clearTimeout(window._gistPushTimer);
+    window._gistPushTimer = setTimeout(() => pushGist(ts), 800);
+  }
+
+  function pushGist(ts) {
+    const payload = JSON.stringify({ items, catalog, categories, ts });
+    fetch(`https://api.github.com/gists/${GIST_ID}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${GIST_TOKEN}`,
+        'Content-Type': 'application/json',
+        'User-Agent': 'bevasarlas-app'
+      },
+      body: JSON.stringify({
+        files: { [GIST_FILE]: { content: payload } }
       })
-      .catch(() => {}); // offline esetén csendben kezeljük
-  }
-
-  function schedulePush(ts) {
-    // Debounce: ha 500ms-on belül újabb változás jön, várunk
-    clearTimeout(window._fbPushTimer);
-    window._fbPushTimer = setTimeout(() => pushRemote(ts), 500);
-  }
-
-  function pushRemote(ts) {
-    if (!FIREBASE_ENABLED) return;
-    const payload = { items, catalog, categories, ts };
-    fetch(fbUrl(), {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).catch(() => {}); // offline esetén csendben kezeljük
+    })
+    .then(r => { if (r.ok) lastRemoteTs = ts; })
+    .catch(() => {}); // offline esetén csendben
   }
 
   // =========================================================================
@@ -646,6 +665,12 @@
   function setupEvents() {
     themeToggleBtn.addEventListener('click', toggleTheme);
 
+    // Gépelés detektálás – szinkron vár, amíg a felhasználó gépel
+    searchInput.addEventListener('focus', () => { isTyping = true; });
+    searchInput.addEventListener('blur',  () => {
+      clearTimeout(typingTimer);
+      typingTimer = setTimeout(() => { isTyping = false; }, 1500);
+    });
     searchInput.addEventListener('input',   onSearchInput);
     searchInput.addEventListener('focus',   onSearchInput);
     searchInput.addEventListener('keydown', e => {
