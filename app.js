@@ -438,78 +438,19 @@
   // ITEM KÁRTYA (nincs színpötty a tétel előtt, nincs kuka gomb - csak swipe törlés)
   // =========================================================================
   function makeItemCard(item) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'item-card-wrapper';
-    wrapper.dataset.id = item.id;
-
-    const backdrop = document.createElement('div');
-    backdrop.className = 'item-delete-backdrop';
-    backdrop.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-      <span>Törlés</span>`;
-    wrapper.appendChild(backdrop);
-
     const card = document.createElement('div');
     card.className = `item-card ${item.checked ? 'purchased' : ''}`;
+    card.dataset.id = item.id;
     card.innerHTML = `
       <div class="item-left">
         <span class="item-title">${esc(item.name)}</span>
       </div>`;
-    wrapper.appendChild(card);
 
     card.addEventListener('click', () => {
-      if (card.dataset.swiped === 'true') { delete card.dataset.swiped; return; }
       toggleChecked(item.id);
     });
 
-    setupSwipe(card, wrapper, item.id);
-    return wrapper;
-  }
-
-  function doSwipeDelete(wrapper, id) {
-    wrapper.style.transition = 'all .25s ease-out';
-    wrapper.style.opacity = '0';
-    wrapper.style.transform = 'translateX(-100%)';
-    setTimeout(() => deleteItem(id), 250);
-  }
-
-  function setupSwipe(card, wrapper, id) {
-    let sx = 0, cx = 0, active = false;
-
-    function start(x) {
-      sx = x;
-      cx = x;
-      active = true;
-      card.classList.add('swiping');
-    }
-
-    function move(x) {
-      if (!active) return;
-      cx = x;
-      const dx = cx - sx;
-      if (dx < 0) {
-        card.style.transform = `translateX(${dx}px)`;
-        if (dx < -10) card.dataset.swiped = 'true';
-      }
-    }
-
-    function end() {
-      if (!active) return;
-      active = false;
-      card.classList.remove('swiping');
-      if ((cx - sx) <= -50) doSwipeDelete(wrapper, id);
-      else card.style.transform = 'translateX(0)';
-    }
-
-    card.addEventListener('touchstart', e => start(e.touches[0].clientX), { passive: true });
-    card.addEventListener('touchmove', e => move(e.touches[0].clientX), { passive: true });
-    card.addEventListener('touchend', end);
-    card.addEventListener('touchcancel', end);
-
-    card.addEventListener('mousedown', e => start(e.clientX));
-    card.addEventListener('mousemove', e => move(e.clientX));
-    card.addEventListener('mouseup', end);
-    card.addEventListener('mouseleave', end);
+    return card;
   }
 
   // =========================================================================
