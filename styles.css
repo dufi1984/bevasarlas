@@ -298,12 +298,17 @@ body {
   box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* Autocomplete Dropdown */
 .autocomplete-dropdown {
   position: absolute;
-  top: 60px;
+  top: 100%;
   left: 0;
   right: 0;
+  margin-top: 8px;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);

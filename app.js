@@ -246,6 +246,9 @@
         chip.classList.add('active');
         selectedColor = cat.id;
         localStorage.setItem(SK.COLOR, selectedColor);
+        if (searchInput.value.trim()) {
+          renderAC(searchInput.value.trim().toLowerCase());
+        }
       });
       colorChipsContainer.appendChild(chip);
     });
@@ -284,6 +287,7 @@
     hideAC();
     hideColorChips();
     clearSearchBtn.classList.add('hidden');
+    searchInput.blur();
   }
 
   function toggleChecked(id) {
@@ -344,7 +348,10 @@
     return row;
   }
 
-  function hideAC() { autocompleteDropdown.classList.add('hidden'); }
+  function hideAC() {
+    autocompleteDropdown.classList.add('hidden');
+    suggestionsList.innerHTML = '';
+  }
 
   // =========================================================================
   // RENDER
