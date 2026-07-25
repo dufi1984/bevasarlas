@@ -501,6 +501,53 @@
   // =========================================================================
   // KATALÓGUS MODAL (ABC sorrend + Single + Hozzáadás / ✓ Hozzáadva gomb)
   // =========================================================================
+  function deleteCatalogItem(id) {
+    catalog = catalog.filter(c => c.id !== id);
+    saveState();
+    renderCatalogModal();
+  }
+
+  function setupCatalogSwipe(card, wrapper, id) {
+    let sx = 0, cx = 0, active = false;
+    card.addEventListener('touchstart', e => {
+      if (e.target.closest('.catalog-add-btn')) return;
+      sx = e.touches[0].clientX;
+      cx = sx;
+      active = true;
+      card.classList.add('swiping');
+    }, { passive: true });
+
+    card.addEventListener('touchmove', e => {
+      if (!active) return;
+      cx = e.touches[0].clientX;
+      const dx = cx - sx;
+      if (dx < 0) {
+        card.style.transform = `translateX(${dx}px)`;
+        if (dx < -15) card.dataset.swiped = 'true';
+      }
+    }, { passive: true });
+
+    card.addEventListener('touchend', () => {
+      if (!active) return;
+      active = false;
+      card.classList.remove('swiping');
+      if ((cx - sx) <= -80) {
+        wrapper.style.transition = 'all .25s ease-out';
+        wrapper.style.opacity = '0';
+        wrapper.style.transform = 'translateX(-100%)';
+        setTimeout(() => deleteCatalogItem(id), 250);
+      } else {
+        card.style.transform = 'translateX(0)';
+      }
+    });
+
+    card.addEventListener('touchcancel', () => {
+      active = false;
+      card.classList.remove('swiping');
+      card.style.transform = 'translateX(0)';
+    });
+  }
+
   function renderCatalogModal() {
     const q = catalogSearchInput.value.trim().toLowerCase();
     catalogItemsList.innerHTML = '';
@@ -510,15 +557,26 @@
     const matches = sorted.filter(c => c.name.toLowerCase().includes(q));
 
     if (matches.length === 0) {
-      catalogItemsList.innerHTML = `<div class="empty-state small"><p class="empty-desc">Nincs találat a könyvtárban.</p></div>`;
+      catalogItemsList.innerHTML = `<div class="empty-state small"><p class="empty-desc">Nincs találat a tételek között.</p></div>`;
       return;
     }
 
     matches.forEach(ci => {
       const isAlreadyActive = items.some(i => i.name.toLowerCase() === ci.name.toLowerCase() && !i.checked);
       const cat = categories.find(c => c.id === ci.colorId) || categories[0];
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'item-card-wrapper';
+
+      const backdrop = document.createElement('div');
+      backdrop.className = 'item-delete-backdrop';
+      backdrop.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+        <span>Törlés</span>`;
+      wrapper.appendChild(backdrop);
+
       const row = document.createElement('div');
-      row.className = 'catalog-item-row';
+      row.className = 'catalog-item-row item-card';
       row.innerHTML = `
         <div class="catalog-item-left">
           <span class="category-indicator" data-color="${ci.colorId || 'green'}"></span>
@@ -530,6 +588,7 @@
             ${isAlreadyActive ? '✓ Hozzáadva' : '+ Hozzáadás'}
           </button>
         </div>`;
+      wrapper.appendChild(row);
 
       if (!isAlreadyActive) {
         row.querySelector('.catalog-add-btn').addEventListener('click', e => {
@@ -538,7 +597,9 @@
           renderCatalogModal();
         });
       }
-      catalogItemsList.appendChild(row);
+
+      setupCatalogSwipe(row, wrapper, ci.id);
+      catalogItemsList.appendChild(wrapper);
     });
   }
 

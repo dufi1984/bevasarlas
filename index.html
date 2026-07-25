@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
 </head>
 <body>
   <div class="app-container">
@@ -43,7 +43,7 @@
               <path d="m21 21-1.5-1.5"/>
             </svg>
           </button>
-          <button id="catalogBtn" class="icon-btn" title="Tétel-könyvtár" aria-label="Könyvtár">
+          <button id="catalogBtn" class="icon-btn" title="Tételek" aria-label="Tételek">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
           </button>
           <button id="themeToggle" class="icon-btn" title="Téma váltása" aria-label="Téma váltása">
@@ -130,7 +130,7 @@
         <div class="modal-header">
           <div class="modal-title">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
-            <h3>Tétel-könyvtár</h3>
+            <h3>Tételek</h3>
           </div>
           <button class="close-modal-btn" id="closeCatalogBtn" aria-label="Bezárás">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -138,7 +138,7 @@
         </div>
         
         <div class="modal-search-wrapper">
-          <input type="text" id="catalogSearchInput" placeholder="Keresés a könyvtárban..." autocomplete="off">
+          <input type="text" id="catalogSearchInput" placeholder="Keresés a tételek között..." autocomplete="off">
         </div>
 
         <div id="catalogItemsList" class="catalog-items-list">
@@ -166,7 +166,7 @@
           </button>
         </div>
         
-        <p class="modal-subtext">Fogd meg a ⠿ ikont a sorrend változtatásához, vagy írd át a nevet!</p>
+        <p class="modal-subtext">Fogd meg a ⠿ ikont a sorrend változtatásához.</p>
 
         <div id="categoriesEditList" class="categories-edit-list">
           <!-- Populated by JS -->
@@ -180,6 +180,6 @@
 
   </div>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
