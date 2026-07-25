@@ -2,6 +2,13 @@
    Bevásárló Lista - Design System & Modern Responsive Styles (Bring Style)
    ========================================================================== */
 
+/* Drag & Drop közben szöveges kijelölés tiltása (mobil bug fix) */
+body.no-select,
+body.no-select * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
 :root {
   /* Font Family */
   --font-main: 'Plus Jakarta Sans', 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -198,6 +205,35 @@ body {
 
 .sun-icon { display: var(--sun-display); }
 .moon-icon { display: var(--moon-display); }
+
+/* Cloud Sync Indicator Dot */
+.sync-pulse-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  box-shadow: 0 0 8px var(--accent-primary);
+  transition: background-color 0.3s ease;
+}
+
+.sync-pulse-dot.syncing {
+  background-color: var(--color-yellow);
+  box-shadow: 0 0 8px var(--color-yellow);
+  animation: pulse 1s infinite alternate;
+}
+
+.sync-pulse-dot.error {
+  background-color: var(--color-red);
+  box-shadow: 0 0 8px var(--color-red);
+}
+
+@keyframes pulse {
+  from { opacity: 0.4; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1.2); }
+}
 
 .badge-count {
   position: absolute;
@@ -505,11 +541,6 @@ body {
   color: var(--text-muted);
 }
 
-.header-helper-text {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
 /* ==========================================================================
    CATEGORY GROUP & DRAG AND DROP REORDERING STYLES
    ========================================================================== */
@@ -618,14 +649,12 @@ body {
   border-radius: var(--radius-full);
 }
 
-/* ==========================================================================
-   BRING STYLE SINGLE LINE ITEM CARD & SWIPE TO DELETE GESTURE
-   ========================================================================== */
+/* Single Line Item Card */
 .item-card-wrapper {
   position: relative;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background-color: #ef4444; /* Swipe delete background color */
+  background-color: #ef4444;
   box-shadow: var(--shadow-sm);
   touch-action: pan-y;
 }
@@ -652,7 +681,6 @@ body {
   height: 20px;
 }
 
-/* Single line item row element */
 .item-card {
   position: relative;
   display: flex;
@@ -670,7 +698,7 @@ body {
 }
 
 .item-card.swiping {
-  transition: none; /* Instant tracking while dragging finger */
+  transition: none;
 }
 
 .item-left {
@@ -681,7 +709,6 @@ body {
   min-width: 0;
 }
 
-/* Color indicator dot / pill on left */
 .category-indicator {
   width: 14px;
   height: 14px;
@@ -698,7 +725,6 @@ body {
 .category-indicator[data-color="purple"] { background-color: var(--color-purple); }
 .category-indicator[data-color="gray"] { background-color: var(--color-gray); }
 
-/* Custom Checkbox circle */
 .custom-checkbox {
   width: 22px;
   height: 22px;
@@ -892,6 +918,44 @@ body {
   padding: 10px 16px 0 16px;
   font-size: 0.85rem;
   color: var(--text-muted);
+}
+
+.sync-modal-body {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sync-code-box, .sync-join-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sync-code-box label, .sync-join-box label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.sync-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.sync-input-group input {
+  flex: 1;
+  height: 44px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  font-family: monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+  outline: none;
 }
 
 .modal-search {

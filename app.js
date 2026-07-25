@@ -1,192 +1,311 @@
 /* ==========================================================================
-   Bevásárló Lista - Application Logic (JavaScript)
+   Bevásárló Lista - Firebase Realtime Database + Live Multi-device Sync
    ========================================================================== */
 
 (function () {
   'use strict';
 
-  // --- LOCAL STORAGE KEYS ---
+  // =========================================================================
+  // FIREBASE CONFIGURATION (ingyenes Realtime Database)
+  // =========================================================================
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDemo-ReplaceWithYours",
+    authDomain: "bevasarlas-dufi1984.firebaseapp.com",
+    databaseURL: "https://bevasarlas-dufi1984-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "bevasarlas-dufi1984",
+    storageBucket: "bevasarlas-dufi1984.appspot.com",
+    messagingSenderId: "000000000000",
+    appId: "1:000000000000:web:0000000000000000000000"
+  };
+
+  // A közös adatbázis elérési útvonal - mindenki ugyanazt a listát látja
+  const DB_PATH = 'bevasarlas/main';
+
+  // =========================================================================
+  // LOCAL STORAGE KEYS (offline fallback)
+  // =========================================================================
   const STORAGE_KEYS = {
-    CATALOG: 'bevasarlas_catalog_v1',
-    ITEMS: 'bevasarlas_current_items_v1',
+    CATALOG: 'bevasarlas_catalog_v2',
+    ITEMS: 'bevasarlas_current_items_v2',
     THEME: 'bevasarlas_theme_v1',
     SELECTED_COLOR: 'bevasarlas_color_v1',
     PURCHASED_COLLAPSED: 'bevasarlas_purchased_collapsed_v1',
-    CATEGORIES: 'bevasarlas_categories_v1'
+    CATEGORIES: 'bevasarlas_categories_v2'
   };
 
-  // --- DEFAULT CATEGORIES ---
+  // =========================================================================
+  // DEFAULT CATEGORIES
+  // =========================================================================
   const DEFAULT_CATEGORIES = [
-    { id: 'green', defaultName: 'Zöld', name: 'Zöldség & Gyümölcs', color: '#10b981', order: 0 },
-    { id: 'yellow', defaultName: 'Sárga', name: 'Pékáru & Sajtok', color: '#f59e0b', order: 1 },
-    { id: 'blue', defaultName: 'Kék', name: 'Tejtermék & Hűtött', color: '#3b82f6', order: 2 },
-    { id: 'red', defaultName: 'Piros', name: 'Hús & Mészáros', color: '#ef4444', order: 3 },
-    { id: 'orange', defaultName: 'Narancs', name: 'Italok & Nasik', color: '#f97316', order: 4 },
-    { id: 'purple', defaultName: 'Lila', name: 'Édesség & Különlegesség', color: '#a855f7', order: 5 },
-    { id: 'gray', defaultName: 'Szürke', name: 'Egyéb & Háztartás', color: '#6b7280', order: 6 }
+    { id: 'green',  name: 'Zöldség & Gyümölcs',     color: '#10b981', order: 0 },
+    { id: 'yellow', name: 'Pékáru & Sajtok',          color: '#f59e0b', order: 1 },
+    { id: 'blue',   name: 'Tejtermék & Hűtött',       color: '#3b82f6', order: 2 },
+    { id: 'red',    name: 'Hús & Mészáros',            color: '#ef4444', order: 3 },
+    { id: 'orange', name: 'Italok & Nasik',            color: '#f97316', order: 4 },
+    { id: 'purple', name: 'Édesség & Különlegesség',   color: '#a855f7', order: 5 },
+    { id: 'gray',   name: 'Egyéb & Háztartás',         color: '#6b7280', order: 6 }
   ];
 
-  // --- DEFAULT MASTER CATALOG DEMO ITEMS ---
   const DEFAULT_CATALOG = [
-    { id: 'cat-1', name: 'Tej', colorId: 'blue' },
-    { id: 'cat-2', name: 'Kifli', colorId: 'yellow' },
-    { id: 'cat-3', name: 'Sajt', colorId: 'yellow' },
-    { id: 'cat-4', name: 'Alma', colorId: 'green' },
-    { id: 'cat-5', name: 'Csirkemell', colorId: 'red' },
-    { id: 'cat-6', name: 'Ásványvíz', colorId: 'orange' },
-    { id: 'cat-7', name: 'Zsemle', colorId: 'yellow' },
-    { id: 'cat-8', name: 'Paradicsom', colorId: 'green' },
-    { id: 'cat-9', name: 'Tejföl', colorId: 'blue' },
-    { id: 'cat-10', name: 'Csoki', colorId: 'purple' },
-    { id: 'cat-11', name: 'Mosószer', colorId: 'gray' }
+    { id: 'cat-1',  name: 'Tej',        colorId: 'blue'   },
+    { id: 'cat-2',  name: 'Kifli',      colorId: 'yellow' },
+    { id: 'cat-3',  name: 'Sajt',       colorId: 'yellow' },
+    { id: 'cat-4',  name: 'Alma',       colorId: 'green'  },
+    { id: 'cat-5',  name: 'Csirkemell', colorId: 'red'    },
+    { id: 'cat-6',  name: 'Ásványvíz',  colorId: 'orange' },
+    { id: 'cat-7',  name: 'Zsemle',     colorId: 'yellow' },
+    { id: 'cat-8',  name: 'Paradicsom', colorId: 'green'  },
+    { id: 'cat-9',  name: 'Tejföl',     colorId: 'blue'   },
+    { id: 'cat-10', name: 'Csoki',      colorId: 'purple' },
+    { id: 'cat-11', name: 'Mosószer',   colorId: 'gray'   }
   ];
 
-  // --- DEFAULT INITIAL SHOPPING LIST ---
   const DEFAULT_ITEMS = [
-    { id: 'item-1', name: 'Tej', colorId: 'blue', checked: false, addedAt: Date.now() - 3000 },
+    { id: 'item-1', name: 'Tej',   colorId: 'blue',   checked: false, addedAt: Date.now() - 3000 },
     { id: 'item-2', name: 'Kifli', colorId: 'yellow', checked: false, addedAt: Date.now() - 2000 },
-    { id: 'item-3', name: 'Sajt', colorId: 'yellow', checked: false, addedAt: Date.now() - 1000 }
+    { id: 'item-3', name: 'Sajt',  colorId: 'yellow', checked: false, addedAt: Date.now() - 1000 }
   ];
 
-  // --- STATE ---
-  let categories = [];
-  let catalog = [];
-  let items = [];
-  let selectedColor = 'green';
-  let theme = 'dark';
+  // =========================================================================
+  // APPLICATION STATE
+  // =========================================================================
+  let categories  = [];
+  let catalog     = [];
+  let items       = [];
+  let selectedColor       = 'green';
+  let theme               = 'dark';
   let isPurchasedCollapsed = false;
+  let firebaseDb           = null;
+  let dbRef                = null;
+  let isFirebaseReady      = false;
+  let remoteUpdatePending  = false; // guard against re-render loop
+  let isDraggingCategory   = false; // used to disable text selection during drag
 
-  // --- DOM ELEMENTS ---
-  const htmlElement = document.documentElement;
-  const searchInput = document.getElementById('searchInput');
-  const clearSearchBtn = document.getElementById('clearSearchBtn');
-  const addBtn = document.getElementById('addBtn');
+  // =========================================================================
+  // DOM ELEMENTS
+  // =========================================================================
+  const htmlElement         = document.documentElement;
+  const searchInput         = document.getElementById('searchInput');
+  const clearSearchBtn      = document.getElementById('clearSearchBtn');
+  const addBtn              = document.getElementById('addBtn');
   const autocompleteDropdown = document.getElementById('autocompleteDropdown');
-  const suggestionsList = document.getElementById('suggestionsList');
+  const suggestionsList     = document.getElementById('suggestionsList');
   const colorChipsContainer = document.getElementById('colorChipsContainer');
 
-  const toBuyListGrouped = document.getElementById('toBuyListGrouped');
-  const toBuyEmpty = document.getElementById('toBuyEmpty');
-  const toBuyCount = document.getElementById('toBuyCount');
+  const toBuyListGrouped  = document.getElementById('toBuyListGrouped');
+  const toBuyEmpty        = document.getElementById('toBuyEmpty');
+  const toBuyCount        = document.getElementById('toBuyCount');
 
-  const purchasedList = document.getElementById('purchasedList');
-  const purchasedEmpty = document.getElementById('purchasedEmpty');
-  const purchasedCount = document.getElementById('purchasedCount');
+  const purchasedList     = document.getElementById('purchasedList');
+  const purchasedEmpty    = document.getElementById('purchasedEmpty');
+  const purchasedCount    = document.getElementById('purchasedCount');
   const togglePurchasedHeader = document.getElementById('togglePurchasedHeader');
-  const purchasedSection = document.querySelector('.purchased-section');
+  const purchasedSection  = document.querySelector('.purchased-section');
 
-  const themeToggleBtn = document.getElementById('themeToggle');
-  const catalogBtn = document.getElementById('catalogBtn');
-  const catalogBadge = document.getElementById('catalogBadge');
-  const catalogModal = document.getElementById('catalogModal');
-  const closeCatalogBtn = document.getElementById('closeCatalogBtn');
+  const themeToggleBtn    = document.getElementById('themeToggle');
+  const catalogBtn        = document.getElementById('catalogBtn');
+  const catalogBadge      = document.getElementById('catalogBadge');
+  const catalogModal      = document.getElementById('catalogModal');
+  const closeCatalogBtn   = document.getElementById('closeCatalogBtn');
   const catalogSearchInput = document.getElementById('catalogSearchInput');
-  const catalogItemsList = document.getElementById('catalogItemsList');
-  const addAllCatalogBtn = document.getElementById('addAllCatalogBtn');
+  const catalogItemsList  = document.getElementById('catalogItemsList');
+  const addAllCatalogBtn  = document.getElementById('addAllCatalogBtn');
 
-  const manageCategoriesBtn = document.getElementById('manageCategoriesBtn');
-  const categoriesModal = document.getElementById('categoriesModal');
-  const closeCategoriesBtn = document.getElementById('closeCategoriesBtn');
-  const categoriesEditList = document.getElementById('categoriesEditList');
+  const manageCategoriesBtn   = document.getElementById('manageCategoriesBtn');
+  const categoriesModal       = document.getElementById('categoriesModal');
+  const closeCategoriesBtn    = document.getElementById('closeCategoriesBtn');
+  const categoriesEditList    = document.getElementById('categoriesEditList');
   const saveCategoriesModalBtn = document.getElementById('saveCategoriesModalBtn');
 
-  // --- INIT APPLICATION ---
+  const syncBtn         = document.getElementById('syncBtn');
+  const syncStatusDot   = document.getElementById('syncStatusDot');
+  const syncModal       = document.getElementById('syncModal');
+  const closeSyncBtn    = document.getElementById('closeSyncBtn');
+  const syncCodeInput   = document.getElementById('syncCodeInput');
+  const copySyncLinkBtn = document.getElementById('copySyncLinkBtn');
+  const customSyncCodeInput = document.getElementById('customSyncCodeInput');
+  const joinSyncCodeBtn = document.getElementById('joinSyncCodeBtn');
+  const forceSyncBtn    = document.getElementById('forceSyncBtn');
+
+  // =========================================================================
+  // INIT
+  // =========================================================================
   function init() {
-    loadState();
+    loadLocalState();
     setupTheme();
     renderColorChips();
     setupEventListeners();
     renderAll();
+    initFirebase();
   }
 
-  // --- LOAD STATE FROM LOCALSTORAGE ---
-  function loadState() {
-    // Load Categories
-    const storedCategories = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
-    if (storedCategories) {
-      try {
-        categories = JSON.parse(storedCategories);
-        // Ensure all default color ids exist in loaded categories
-        DEFAULT_CATEGORIES.forEach(defCat => {
-          if (!categories.some(c => c.id === defCat.id)) {
-            categories.push({ ...defCat, order: categories.length });
-          }
-        });
-      } catch (e) {
-        categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+  // =========================================================================
+  // FIREBASE INITIALIZATION & LIVE SYNC
+  // =========================================================================
+  function initFirebase() {
+    setSyncStatus('syncing');
+
+    // Load Firebase SDK dynamically
+    const script = document.createElement('script');
+    script.type = 'module';
+    script.textContent = buildFirebaseModuleCode();
+    document.head.appendChild(script);
+  }
+
+  function buildFirebaseModuleCode() {
+    // Firebase v9 modular SDK via CDN
+    return `
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, onValue, set, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+const firebaseConfig = ${JSON.stringify(FIREBASE_CONFIG)};
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+const dataRef = ref(db, '${DB_PATH}');
+
+// Expose helpers to the main app scope
+window._fbSet = (data) => set(dataRef, data);
+window._fbOnValue = (callback) => onValue(dataRef, callback);
+window._fbServerTimestamp = serverTimestamp;
+
+// Signal ready
+window.dispatchEvent(new CustomEvent('firebase-ready'));
+    `;
+  }
+
+  window.addEventListener('firebase-ready', () => {
+    isFirebaseReady = true;
+
+    // Subscribe to live updates
+    window._fbOnValue((snapshot) => {
+      const remoteData = snapshot.val();
+      if (!remoteData) {
+        // Database is empty – push our local state up as the initial value
+        pushToFirebase();
+        return;
       }
+
+      // Only update if the remote timestamp is newer than our local state
+      const remoteTs = remoteData.updatedAt || 0;
+      const localTs  = parseInt(localStorage.getItem('bevasarlas_ts') || '0', 10);
+
+      if (remoteTs > localTs) {
+        remoteUpdatePending = true;
+        applyRemoteData(remoteData);
+        remoteUpdatePending = false;
+      }
+
+      setSyncStatus('synced');
+    });
+  });
+
+  function applyRemoteData(remoteData) {
+    if (remoteData.items)      items      = remoteData.items;
+    if (remoteData.catalog)    catalog    = remoteData.catalog;
+    if (remoteData.categories) categories = remoteData.categories;
+
+    // Save locally for offline use
+    saveLocalStateOnly();
+    sortCategories();
+    renderColorChips();
+    renderAll();
+  }
+
+  function pushToFirebase() {
+    if (!isFirebaseReady || remoteUpdatePending) return;
+
+    const ts = Date.now();
+    localStorage.setItem('bevasarlas_ts', ts.toString());
+    setSyncStatus('syncing');
+
+    const payload = {
+      items:      items,
+      catalog:    catalog,
+      categories: categories,
+      updatedAt:  ts
+    };
+
+    window._fbSet(payload)
+      .then(() => setSyncStatus('synced'))
+      .catch(() => setSyncStatus('synced')); // fail silently, local data still saved
+  }
+
+  // =========================================================================
+  // LOCAL STATE (used as offline fallback and initial load)
+  // =========================================================================
+  function loadLocalState() {
+    const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+    if (storedCats) {
+      try {
+        categories = JSON.parse(storedCats);
+        DEFAULT_CATEGORIES.forEach(def => {
+          if (!categories.some(c => c.id === def.id)) categories.push({ ...def, order: categories.length });
+        });
+      } catch (e) { categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)); }
     } else {
       categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-      saveCategories();
     }
-
-    // Sort categories by order
     sortCategories();
 
-    // Load Catalog
     const storedCatalog = localStorage.getItem(STORAGE_KEYS.CATALOG);
-    if (storedCatalog) {
-      try { catalog = JSON.parse(storedCatalog); } catch (e) { catalog = [...DEFAULT_CATALOG]; }
-    } else {
-      catalog = [...DEFAULT_CATALOG];
-      saveCatalog();
-    }
+    catalog = storedCatalog ? tryParse(storedCatalog, DEFAULT_CATALOG) : [...DEFAULT_CATALOG];
 
-    // Load Items
     const storedItems = localStorage.getItem(STORAGE_KEYS.ITEMS);
-    if (storedItems) {
-      try { items = JSON.parse(storedItems); } catch (e) { items = [...DEFAULT_ITEMS]; }
-    } else {
-      items = [...DEFAULT_ITEMS];
-      saveItems();
-    }
+    items = storedItems ? tryParse(storedItems, DEFAULT_ITEMS) : [...DEFAULT_ITEMS];
 
-    // Load Theme & Settings
-    theme = localStorage.getItem(STORAGE_KEYS.THEME) || 'dark';
-    selectedColor = localStorage.getItem(STORAGE_KEYS.SELECTED_COLOR) || 'green';
+    theme               = localStorage.getItem(STORAGE_KEYS.THEME) || 'dark';
+    selectedColor       = localStorage.getItem(STORAGE_KEYS.SELECTED_COLOR) || 'green';
     isPurchasedCollapsed = localStorage.getItem(STORAGE_KEYS.PURCHASED_COLLAPSED) === 'true';
   }
 
-  function sortCategories() {
-    categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }
-
-  function saveCategories() {
+  function saveLocalStateOnly() {
     localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(categories));
+    localStorage.setItem(STORAGE_KEYS.CATALOG,    JSON.stringify(catalog));
+    localStorage.setItem(STORAGE_KEYS.ITEMS,       JSON.stringify(items));
   }
 
-  function saveCatalog() {
-    localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(catalog));
+  function saveState() {
+    saveLocalStateOnly();
+    pushToFirebase();
     renderCatalogBadge();
   }
 
-  function saveItems() {
-    localStorage.setItem(STORAGE_KEYS.ITEMS, JSON.stringify(items));
+  function tryParse(str, fallback) {
+    try { return JSON.parse(str); } catch (e) { return fallback; }
   }
 
-  function saveTheme() {
-    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+  // =========================================================================
+  // SYNC STATUS INDICATOR
+  // =========================================================================
+  function setSyncStatus(status) {
+    syncStatusDot.className = 'sync-pulse-dot';
+    if (status === 'syncing') {
+      syncStatusDot.classList.add('syncing');
+      syncBtn.title = 'Szinkronizálás...';
+    } else if (status === 'error') {
+      syncStatusDot.classList.add('error');
+      syncBtn.title = 'Szinkronizálási hiba';
+    } else {
+      syncBtn.title = 'Élő szinkronizáció aktív ✓';
+    }
   }
 
-  function saveSelectedColor() {
-    localStorage.setItem(STORAGE_KEYS.SELECTED_COLOR, selectedColor);
-  }
-
-  // --- THEME MANAGEMENT ---
-  function setupTheme() {
-    htmlElement.setAttribute('data-theme', theme);
-  }
-
+  // =========================================================================
+  // THEME
+  // =========================================================================
+  function setupTheme() { htmlElement.setAttribute('data-theme', theme); }
   function toggleTheme() {
     theme = theme === 'dark' ? 'light' : 'dark';
     htmlElement.setAttribute('data-theme', theme);
-    saveTheme();
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
   }
 
-  // --- COLOR CHIPS MANAGEMENT ---
+  // =========================================================================
+  // COLOR CHIPS
+  // =========================================================================
   function renderColorChips() {
     colorChipsContainer.innerHTML = '';
-    
     categories.forEach(cat => {
       const chip = document.createElement('button');
       chip.className = `color-chip ${cat.id === selectedColor ? 'active' : ''}`;
@@ -194,59 +313,46 @@
       chip.style.setProperty('--chip-color', cat.color);
       chip.title = cat.name;
       chip.innerHTML = `<span class="dot"></span>${escapeHtml(cat.name)}`;
-
       chip.addEventListener('click', () => {
-        const allChips = colorChipsContainer.querySelectorAll('.color-chip');
-        allChips.forEach(c => c.classList.remove('active'));
+        colorChipsContainer.querySelectorAll('.color-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         selectedColor = cat.id;
-        saveSelectedColor();
+        localStorage.setItem(STORAGE_KEYS.SELECTED_COLOR, selectedColor);
       });
-
       colorChipsContainer.appendChild(chip);
     });
   }
 
-  // --- ITEM MANAGEMENT LOGIC ---
+  function sortCategories() {
+    categories.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  // =========================================================================
+  // ITEM MANAGEMENT
+  // =========================================================================
   function addItem(name, colorId = selectedColor) {
-    const trimmedName = name.trim();
-    if (!trimmedName) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
 
-    // Check catalog match
-    const catalogMatch = catalog.find(c => c.name.toLowerCase() === trimmedName.toLowerCase());
-    if (!catalogMatch) {
-      const newCatItem = {
-        id: 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-        name: trimmedName,
-        colorId: colorId
-      };
-      catalog.push(newCatItem);
-      saveCatalog();
+    // Keep catalog up-to-date
+    const match = catalog.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (!match) {
+      catalog.push({ id: uid(), name: trimmed, colorId });
     } else {
-      if (colorId === selectedColor && catalogMatch.colorId) {
-        colorId = catalogMatch.colorId;
-      }
+      colorId = match.colorId || colorId;
     }
 
-    // Add or restore in active list
-    const existingIndex = items.findIndex(i => i.name.toLowerCase() === trimmedName.toLowerCase());
-    if (existingIndex !== -1) {
-      items[existingIndex].checked = false;
-      items[existingIndex].colorId = colorId;
-      items[existingIndex].addedAt = Date.now();
+    const existing = items.findIndex(i => i.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing !== -1) {
+      items[existing].checked = false;
+      items[existing].colorId = colorId;
+      items[existing].addedAt = Date.now();
     } else {
-      items.unshift({
-        id: 'item-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-        name: trimmedName,
-        colorId: colorId,
-        checked: false,
-        addedAt: Date.now()
-      });
+      items.unshift({ id: uid(), name: trimmed, colorId, checked: false, addedAt: Date.now() });
     }
 
-    saveItems();
+    saveState();
     renderAll();
-
     searchInput.value = '';
     hideAutocomplete();
     clearSearchBtn.classList.add('hidden');
@@ -254,283 +360,220 @@
 
   function toggleItemChecked(itemId) {
     const item = items.find(i => i.id === itemId);
-    if (item) {
-      item.checked = !item.checked;
-      saveItems();
-      renderAll();
-    }
+    if (item) { item.checked = !item.checked; saveState(); renderAll(); }
   }
 
   function deleteItem(itemId) {
     items = items.filter(i => i.id !== itemId);
-    saveItems();
+    saveState();
     renderAll();
   }
 
   function deleteFromCatalog(catalogId) {
     catalog = catalog.filter(c => c.id !== catalogId);
-    saveCatalog();
+    saveState();
     renderCatalogModal();
-    renderAutocomplete();
   }
 
-  // --- AUTOCOMPLETE LOGIC ---
+  // =========================================================================
+  // AUTOCOMPLETE
+  // =========================================================================
   function handleSearchInput() {
-    const query = searchInput.value.trim().toLowerCase();
-    if (query.length > 0) {
-      clearSearchBtn.classList.remove('hidden');
-      renderAutocomplete(query);
-    } else {
-      clearSearchBtn.classList.add('hidden');
-      hideAutocomplete();
-    }
+    const q = searchInput.value.trim().toLowerCase();
+    if (q) { clearSearchBtn.classList.remove('hidden'); renderAutocomplete(q); }
+    else   { clearSearchBtn.classList.add('hidden'); hideAutocomplete(); }
   }
 
-  function renderAutocomplete(query = '') {
-    const trimmed = query.trim().toLowerCase();
+  function renderAutocomplete(query) {
     suggestionsList.innerHTML = '';
-
-    if (!trimmed) {
-      hideAutocomplete();
-      return;
-    }
-
-    const matches = catalog.filter(c => c.name.toLowerCase().includes(trimmed));
+    const matches = catalog.filter(c => c.name.toLowerCase().includes(query));
 
     if (matches.length === 0) {
-      const newItemRow = document.createElement('div');
-      newItemRow.className = 'suggestion-item';
-      const catObj = categories.find(c => c.id === selectedColor) || categories[0];
-      newItemRow.innerHTML = `
+      const row = document.createElement('div');
+      row.className = 'suggestion-item';
+      const cat = categories.find(c => c.id === selectedColor) || categories[0];
+      row.innerHTML = `
         <div class="suggestion-left">
-          <span class="suggestion-color-tag" style="background-color: ${catObj.color};"></span>
+          <span class="suggestion-color-tag" style="background-color:${cat.color}"></span>
           <span>"${escapeHtml(searchInput.value.trim())}" felvétele újként</span>
         </div>
-        <div class="suggestion-add-tag">+ Hozzáadás</div>
-      `;
-      newItemRow.addEventListener('click', () => {
-        addItem(searchInput.value, selectedColor);
-      });
-      suggestionsList.appendChild(newItemRow);
+        <div class="suggestion-add-tag">+ Hozzáadás</div>`;
+      row.addEventListener('click', () => addItem(searchInput.value, selectedColor));
+      suggestionsList.appendChild(row);
     } else {
-      matches.forEach(match => {
-        const catObj = categories.find(c => c.id === match.colorId) || categories[0];
-        const itemRow = document.createElement('div');
-        itemRow.className = 'suggestion-item';
-        itemRow.innerHTML = `
+      matches.forEach(m => {
+        const cat = categories.find(c => c.id === m.colorId) || categories[0];
+        const row = document.createElement('div');
+        row.className = 'suggestion-item';
+        row.innerHTML = `
           <div class="suggestion-left">
-            <span class="suggestion-color-tag" style="background-color: ${catObj.color};"></span>
-            <span>${escapeHtml(match.name)}</span>
+            <span class="suggestion-color-tag" style="background-color:${cat.color}"></span>
+            <span>${escapeHtml(m.name)}</span>
           </div>
-          <div class="suggestion-add-tag">+ Listára</div>
-        `;
-        itemRow.addEventListener('click', () => {
-          addItem(match.name, match.colorId);
-        });
-        suggestionsList.appendChild(itemRow);
+          <div class="suggestion-add-tag">+ Listára</div>`;
+        row.addEventListener('click', () => addItem(m.name, m.colorId));
+        suggestionsList.appendChild(row);
       });
     }
-
     autocompleteDropdown.classList.remove('hidden');
   }
 
-  function hideAutocomplete() {
-    autocompleteDropdown.classList.add('hidden');
-  }
+  function hideAutocomplete() { autocompleteDropdown.classList.add('hidden'); }
 
-  // --- RENDER FUNCTIONS ---
+  // =========================================================================
+  // RENDER
+  // =========================================================================
   function renderAll() {
     renderToBuyListGrouped();
     renderPurchasedList();
     renderCatalogBadge();
   }
 
-  // --- RENDER GROUPED TO-BUY LIST WITH DRAG & DROP REORDERING ---
   function renderToBuyListGrouped() {
-    const activeItems = items.filter(i => !i.checked);
-    toBuyCount.textContent = activeItems.length;
-
+    const active = items.filter(i => !i.checked);
+    toBuyCount.textContent = active.length;
     toBuyListGrouped.innerHTML = '';
 
-    if (activeItems.length === 0) {
+    if (active.length === 0) {
       toBuyListGrouped.appendChild(toBuyEmpty);
       toBuyEmpty.classList.remove('hidden');
       return;
     }
-
     toBuyEmpty.classList.add('hidden');
-
-    // Group items by category colorId
     sortCategories();
 
-    categories.forEach(category => {
-      const categoryItems = activeItems.filter(item => (item.colorId || 'green') === category.id);
-
-      // Only render category group if it contains active items
-      if (categoryItems.length > 0) {
-        const groupEl = createCategoryGroupElement(category, categoryItems);
-        toBuyListGrouped.appendChild(groupEl);
-      }
+    categories.forEach(cat => {
+      const catItems = active.filter(i => (i.colorId || 'green') === cat.id);
+      if (catItems.length > 0) toBuyListGrouped.appendChild(createCategoryGroup(cat, catItems));
     });
   }
 
-  function createCategoryGroupElement(category, categoryItems) {
-    const groupContainer = document.createElement('div');
-    groupContainer.className = 'category-group';
-    groupContainer.dataset.categoryId = category.id;
-    groupContainer.draggable = true;
+  function createCategoryGroup(category, catItems) {
+    const group = document.createElement('div');
+    group.className = 'category-group';
+    group.dataset.categoryId = category.id;
+    group.draggable = true;
 
-    // Header
-    const groupHeader = document.createElement('div');
-    groupHeader.className = 'category-group-header';
-    groupHeader.innerHTML = `
+    const header = document.createElement('div');
+    header.className = 'category-group-header';
+    header.innerHTML = `
       <div class="category-header-left">
-        <span class="drag-handle" title="Húzd a sorrend módosításához">⠿</span>
+        <span class="drag-handle">⠿</span>
         <div class="category-title-badge">
-          <span class="category-dot" style="background-color: ${category.color};"></span>
+          <span class="category-dot" style="background-color:${category.color}"></span>
           <span>${escapeHtml(category.name)}</span>
           <button class="category-edit-btn" title="Kategória átnevezése">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
           </button>
         </div>
       </div>
-      <span class="category-item-count">${categoryItems.length} db</span>
-    `;
+      <span class="category-item-count">${catItems.length} db</span>`;
 
-    // Inline edit category button handler
-    const editBtn = groupHeader.querySelector('.category-edit-btn');
-    editBtn.addEventListener('click', (e) => {
+    header.querySelector('.category-edit-btn').addEventListener('click', e => {
       e.stopPropagation();
-      openCategoryRenamePrompt(category);
+      const n = prompt(`"${category.name}" kategória új neve:`, category.name);
+      if (n && n.trim()) { category.name = n.trim(); saveState(); renderColorChips(); renderAll(); }
     });
 
-    groupContainer.appendChild(groupHeader);
-
-    // Render Items under this category
-    categoryItems.forEach(item => {
-      const itemWrapper = createItemCardElement(item);
-      groupContainer.appendChild(itemWrapper);
-    });
-
-    // --- HTML5 & TOUCH DRAG AND DROP REORDERING ---
-    setupCategoryDragAndDrop(groupContainer, category.id);
-
-    return groupContainer;
+    group.appendChild(header);
+    catItems.forEach(item => group.appendChild(createItemCard(item)));
+    setupCategoryDnD(group, category.id);
+    return group;
   }
 
-  function openCategoryRenamePrompt(category) {
-    const newName = prompt(`"${category.name}" kategória új neve:`, category.name);
-    if (newName !== null && newName.trim() !== '') {
-      category.name = newName.trim();
-      saveCategories();
-      renderColorChips();
-      renderAll();
-    }
-  }
-
-  // --- CATEGORY DRAG AND DROP HANDLERS ---
+  // =========================================================================
+  // DRAG AND DROP – kategória csoportok rendezése
+  // Fontos: drag közben a szöveges kijelölés tiltott (mobil bug fix)
+  // =========================================================================
   let draggedCategoryId = null;
 
-  function setupCategoryDragAndDrop(groupContainer, categoryId) {
-    // HTML5 Drag Events
-    groupContainer.addEventListener('dragstart', (e) => {
+  function setupCategoryDnD(group, categoryId) {
+    // ---- Desktop HTML5 drag events ----
+    group.addEventListener('dragstart', e => {
       draggedCategoryId = categoryId;
-      groupContainer.classList.add('dragging');
+      isDraggingCategory = true;
+      group.classList.add('dragging');
+      document.body.classList.add('no-select');
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', categoryId);
     });
 
-    groupContainer.addEventListener('dragend', () => {
+    group.addEventListener('dragend', () => {
       draggedCategoryId = null;
-      groupContainer.classList.remove('dragging');
+      isDraggingCategory = false;
+      group.classList.remove('dragging');
+      document.body.classList.remove('no-select');
       document.querySelectorAll('.category-group').forEach(el => el.classList.remove('drag-over'));
     });
 
-    groupContainer.addEventListener('dragover', (e) => {
+    group.addEventListener('dragover', e => {
       e.preventDefault();
-      if (draggedCategoryId && draggedCategoryId !== categoryId) {
-        groupContainer.classList.add('drag-over');
-      }
+      if (draggedCategoryId && draggedCategoryId !== categoryId) group.classList.add('drag-over');
     });
 
-    groupContainer.addEventListener('dragleave', () => {
-      groupContainer.classList.remove('drag-over');
-    });
+    group.addEventListener('dragleave', () => group.classList.remove('drag-over'));
 
-    groupContainer.addEventListener('drop', (e) => {
+    group.addEventListener('drop', e => {
       e.preventDefault();
-      groupContainer.classList.remove('drag-over');
-
-      if (draggedCategoryId && draggedCategoryId !== categoryId) {
-        reorderCategories(draggedCategoryId, categoryId);
-      }
+      group.classList.remove('drag-over');
+      if (draggedCategoryId && draggedCategoryId !== categoryId) reorderCategories(draggedCategoryId, categoryId);
     });
 
-    // Mobile Touch Drag Fallback on Handle ⠿
-    const handle = groupContainer.querySelector('.drag-handle');
-    let touchStartY = 0;
+    // ---- Mobile touch drag on the handle only ----
+    const handle = group.querySelector('.drag-handle');
 
-    handle.addEventListener('touchstart', (e) => {
-      touchStartY = e.touches[0].clientY;
+    handle.addEventListener('touchstart', e => {
       draggedCategoryId = categoryId;
-      groupContainer.classList.add('dragging');
+      isDraggingCategory = true;
+      group.classList.add('dragging');
+      document.body.classList.add('no-select');
+      window.getSelection && window.getSelection().removeAllRanges();
     }, { passive: true });
 
-    handle.addEventListener('touchmove', (e) => {
-      if (!draggedCategoryId) return;
-      const currentY = e.touches[0].clientY;
-      const elementBelow = document.elementFromPoint(e.touches[0].clientX, currentY);
-      if (!elementBelow) return;
-
-      const targetGroup = elementBelow.closest('.category-group');
+    handle.addEventListener('touchmove', e => {
+      if (!isDraggingCategory) return;
+      window.getSelection && window.getSelection().removeAllRanges();
+      const touch = e.touches[0];
+      const below = document.elementFromPoint(touch.clientX, touch.clientY);
       document.querySelectorAll('.category-group').forEach(el => el.classList.remove('drag-over'));
-
-      if (targetGroup && targetGroup.dataset.categoryId !== draggedCategoryId) {
+      const targetGroup = below && below.closest('.category-group');
+      if (targetGroup && targetGroup.dataset.categoryId !== draggedCategoryId)
         targetGroup.classList.add('drag-over');
-      }
     }, { passive: true });
 
-    handle.addEventListener('touchend', (e) => {
-      if (!draggedCategoryId) return;
-      groupContainer.classList.remove('dragging');
-
-      const endY = e.changedTouches[0].clientY;
-      const elementBelow = document.elementFromPoint(e.changedTouches[0].clientX, endY);
-      
-      if (elementBelow) {
-        const targetGroup = elementBelow.closest('.category-group');
-        if (targetGroup && targetGroup.dataset.categoryId && targetGroup.dataset.categoryId !== draggedCategoryId) {
-          reorderCategories(draggedCategoryId, targetGroup.dataset.categoryId);
-        }
-      }
-
+    handle.addEventListener('touchend', e => {
+      if (!isDraggingCategory) return;
+      isDraggingCategory = false;
+      group.classList.remove('dragging');
+      document.body.classList.remove('no-select');
       draggedCategoryId = null;
+
+      const touch = e.changedTouches[0];
+      const below = document.elementFromPoint(touch.clientX, touch.clientY);
+      const targetGroup = below && below.closest('.category-group');
+      if (targetGroup && targetGroup.dataset.categoryId && targetGroup.dataset.categoryId !== categoryId)
+        reorderCategories(categoryId, targetGroup.dataset.categoryId);
+
       document.querySelectorAll('.category-group').forEach(el => el.classList.remove('drag-over'));
     });
   }
 
-  function reorderCategories(draggedId, targetId) {
-    const draggedIdx = categories.findIndex(c => c.id === draggedId);
-    const targetIdx = categories.findIndex(c => c.id === targetId);
-
-    if (draggedIdx !== -1 && targetIdx !== -1) {
-      const [movedCategory] = categories.splice(draggedIdx, 1);
-      categories.splice(targetIdx, 0, movedCategory);
-
-      // Re-assign order numbers
-      categories.forEach((cat, idx) => {
-        cat.order = idx;
-      });
-
-      saveCategories();
-      renderAll();
-    }
+  function reorderCategories(fromId, toId) {
+    const fromIdx = categories.findIndex(c => c.id === fromId);
+    const toIdx   = categories.findIndex(c => c.id === toId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = categories.splice(fromIdx, 1);
+    categories.splice(toIdx, 0, moved);
+    categories.forEach((c, i) => c.order = i);
+    saveState();
+    renderAll();
   }
 
+  // =========================================================================
+  // PURCHASED LIST
+  // =========================================================================
   function renderPurchasedList() {
     const purchased = items.filter(i => i.checked);
     purchasedCount.textContent = purchased.length;
-
     purchasedList.innerHTML = '';
 
     if (purchased.length === 0) {
@@ -538,25 +581,18 @@
       purchasedEmpty.classList.remove('hidden');
     } else {
       purchasedEmpty.classList.add('hidden');
-      purchased.forEach(item => {
-        const itemEl = createItemCardElement(item);
-        purchasedList.appendChild(itemEl);
-      });
+      purchased.forEach(item => purchasedList.appendChild(createItemCard(item)));
     }
 
-    if (isPurchasedCollapsed) {
-      purchasedSection.classList.add('collapsed');
-    } else {
-      purchasedSection.classList.remove('collapsed');
-    }
+    purchasedSection.classList.toggle('collapsed', isPurchasedCollapsed);
   }
 
-  function renderCatalogBadge() {
-    catalogBadge.textContent = catalog.length;
-  }
+  function renderCatalogBadge() { catalogBadge.textContent = catalog.length; }
 
-  // --- SINGLE LINE ITEM CARD WITH TOUCH SWIPE DELETE ---
-  function createItemCardElement(item) {
+  // =========================================================================
+  // ITEM CARD (Bring-style single row + swipe-to-delete)
+  // =========================================================================
+  function createItemCard(item) {
     const wrapper = document.createElement('div');
     wrapper.className = 'item-card-wrapper';
     wrapper.dataset.id = item.id;
@@ -565,13 +601,11 @@
     backdrop.className = 'item-delete-backdrop';
     backdrop.innerHTML = `
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-      <span>Törlés</span>
-    `;
+      <span>Törlés</span>`;
     wrapper.appendChild(backdrop);
 
     const card = document.createElement('div');
     card.className = `item-card ${item.checked ? 'purchased' : ''}`;
-
     card.innerHTML = `
       <div class="item-left">
         <span class="category-indicator" data-color="${item.colorId || 'green'}"></span>
@@ -581,188 +615,157 @@
         <span class="item-title">${escapeHtml(item.name)}</span>
       </div>
       <div class="item-right-actions">
-        <button class="item-btn delete-btn" title="Törlés" aria-label="Tétel törlése">
+        <button class="item-btn delete-btn" title="Törlés">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
         </button>
-      </div>
-    `;
-
+      </div>`;
     wrapper.appendChild(card);
 
-    card.addEventListener('click', (e) => {
+    card.addEventListener('click', e => {
+      if (isDraggingCategory) return;
       if (e.target.closest('.delete-btn')) return;
-      if (card.dataset.hasSwiped === 'true') {
-        delete card.dataset.hasSwiped;
-        return;
-      }
+      if (card.dataset.hasSwiped === 'true') { delete card.dataset.hasSwiped; return; }
       toggleItemChecked(item.id);
     });
 
-    const delBtn = card.querySelector('.delete-btn');
-    delBtn.addEventListener('click', (e) => {
+    card.querySelector('.delete-btn').addEventListener('click', e => {
       e.stopPropagation();
-      animateAndDeleteWrapper(wrapper, item.id);
+      swipeDelete(wrapper, item.id);
     });
 
-    setupSwipeGesture(card, wrapper, item.id);
-
+    setupSwipe(card, wrapper, item.id);
     return wrapper;
   }
 
-  function animateAndDeleteWrapper(wrapper, itemId) {
-    wrapper.style.transition = 'all 0.25s ease-out';
+  function swipeDelete(wrapper, itemId) {
+    wrapper.style.transition = 'all .25s ease-out';
     wrapper.style.opacity = '0';
     wrapper.style.transform = 'translateX(-100%)';
-    setTimeout(() => {
-      deleteItem(itemId);
-    }, 250);
+    setTimeout(() => deleteItem(itemId), 250);
   }
 
-  function setupSwipeGesture(card, wrapper, itemId) {
-    let startX = 0;
-    let currentX = 0;
-    let isDragging = false;
-    const deleteThreshold = -80;
+  function setupSwipe(card, wrapper, itemId) {
+    let startX = 0, currentX = 0, active = false;
 
-    card.addEventListener('touchstart', (e) => {
+    card.addEventListener('touchstart', e => {
+      if (isDraggingCategory) return;
       startX = e.touches[0].clientX;
       currentX = startX;
-      isDragging = true;
+      active = true;
       card.classList.add('swiping');
     }, { passive: true });
 
-    card.addEventListener('touchmove', (e) => {
-      if (!isDragging) return;
+    card.addEventListener('touchmove', e => {
+      if (!active || isDraggingCategory) return;
       currentX = e.touches[0].clientX;
-      const deltaX = currentX - startX;
-
-      if (deltaX < 0) {
-        card.style.transform = `translateX(${deltaX}px)`;
-        if (deltaX < -15) {
-          card.dataset.hasSwiped = 'true';
-        }
+      const dx = currentX - startX;
+      if (dx < 0) {
+        card.style.transform = `translateX(${dx}px)`;
+        if (dx < -15) card.dataset.hasSwiped = 'true';
       }
     }, { passive: true });
 
     card.addEventListener('touchend', () => {
-      if (!isDragging) return;
-      isDragging = false;
+      if (!active) return;
+      active = false;
       card.classList.remove('swiping');
-      const deltaX = currentX - startX;
-
-      if (deltaX <= deleteThreshold) {
-        animateAndDeleteWrapper(wrapper, itemId);
-      } else {
-        card.style.transform = 'translateX(0)';
-      }
+      const dx = currentX - startX;
+      if (dx <= -80) swipeDelete(wrapper, itemId);
+      else card.style.transform = 'translateX(0)';
     });
 
     card.addEventListener('touchcancel', () => {
-      isDragging = false;
+      active = false;
       card.classList.remove('swiping');
       card.style.transform = 'translateX(0)';
     });
   }
 
-  // --- MASTER CATALOG MODAL ---
+  // =========================================================================
+  // CATALOG MODAL
+  // =========================================================================
   function renderCatalogModal() {
     const filter = catalogSearchInput.value.trim().toLowerCase();
     catalogItemsList.innerHTML = '';
 
     const matches = catalog.filter(c => c.name.toLowerCase().includes(filter));
-
     if (matches.length === 0) {
-      catalogItemsList.innerHTML = `
-        <div class="empty-state small">
-          <p class="empty-desc">Nincs találat a könyvtárban</p>
-        </div>
-      `;
+      catalogItemsList.innerHTML = `<div class="empty-state small"><p class="empty-desc">Nincs találat</p></div>`;
       return;
     }
 
-    matches.forEach(catItem => {
-      const isAlreadyActive = items.some(i => i.name.toLowerCase() === catItem.name.toLowerCase() && !i.checked);
-      const catObj = categories.find(c => c.id === catItem.colorId) || categories[0];
-
+    matches.forEach(ci => {
+      const isActive = items.some(i => i.name.toLowerCase() === ci.name.toLowerCase() && !i.checked);
+      const cat = categories.find(c => c.id === ci.colorId) || categories[0];
       const row = document.createElement('div');
       row.className = 'catalog-item-row';
       row.innerHTML = `
         <div class="catalog-item-left">
-          <span class="category-indicator" data-color="${catItem.colorId || 'green'}"></span>
-          <span>${escapeHtml(catItem.name)}</span>
-          <span style="font-size: 0.75rem; color: var(--text-muted);">(${escapeHtml(catObj.name)})</span>
+          <span class="category-indicator" data-color="${ci.colorId || 'green'}"></span>
+          <span>${escapeHtml(ci.name)}</span>
+          <span style="font-size:.75rem;color:var(--text-muted)">(${escapeHtml(cat.name)})</span>
         </div>
         <div class="catalog-actions">
-          <button class="catalog-add-btn">
-            ${isAlreadyActive ? '✓ Listán' : '+ Listára'}
-          </button>
-          <button class="item-btn delete-cat-btn" title="Törlés a könyvtárból" aria-label="Törlés">
+          <button class="catalog-add-btn">${isActive ? '✓ Listán' : '+ Listára'}</button>
+          <button class="item-btn delete-cat-btn">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
           </button>
-        </div>
-      `;
+        </div>`;
 
-      const addBtnEl = row.querySelector('.catalog-add-btn');
-      addBtnEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        addItem(catItem.name, catItem.colorId);
-        renderCatalogModal();
+      row.querySelector('.catalog-add-btn').addEventListener('click', e => {
+        e.stopPropagation(); addItem(ci.name, ci.colorId); renderCatalogModal();
       });
-
-      const delCatBtn = row.querySelector('.delete-cat-btn');
-      delCatBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteFromCatalog(catItem.id);
+      row.querySelector('.delete-cat-btn').addEventListener('click', e => {
+        e.stopPropagation(); deleteFromCatalog(ci.id);
       });
-
       catalogItemsList.appendChild(row);
     });
   }
 
-  // --- CATEGORIES MANAGEMENT MODAL ---
+  // =========================================================================
+  // CATEGORY MANAGER MODAL
+  // =========================================================================
   function renderCategoriesModal() {
     categoriesEditList.innerHTML = '';
-
     categories.forEach(cat => {
       const row = document.createElement('div');
       row.className = 'category-edit-row';
       row.innerHTML = `
-        <span class="category-dot" style="background-color: ${cat.color};"></span>
-        <input type="text" data-id="${cat.id}" value="${escapeHtml(cat.name)}" placeholder="Kategória neve...">
-      `;
+        <span class="category-dot" style="background-color:${cat.color}"></span>
+        <input type="text" data-id="${cat.id}" value="${escapeHtml(cat.name)}" placeholder="Kategória neve...">`;
       categoriesEditList.appendChild(row);
     });
   }
 
   function saveCategoriesFromModal() {
-    const inputs = categoriesEditList.querySelectorAll('input[data-id]');
-    inputs.forEach(input => {
-      const catId = input.dataset.id;
-      const val = input.value.trim();
-      const cat = categories.find(c => c.id === catId);
-      if (cat && val) {
-        cat.name = val;
-      }
+    categoriesEditList.querySelectorAll('input[data-id]').forEach(input => {
+      const cat = categories.find(c => c.id === input.dataset.id);
+      if (cat && input.value.trim()) cat.name = input.value.trim();
     });
-
-    saveCategories();
+    saveState();
     renderColorChips();
     renderAll();
     categoriesModal.classList.add('hidden');
   }
 
-  // --- EVENT LISTENERS ---
+  // =========================================================================
+  // SYNC MODAL
+  // =========================================================================
+  function renderSyncModal() {
+    syncCodeInput.value = window.location.href.split('?')[0];
+    customSyncCodeInput.value = '';
+  }
+
+  // =========================================================================
+  // EVENT LISTENERS
+  // =========================================================================
   function setupEventListeners() {
     themeToggleBtn.addEventListener('click', toggleTheme);
 
     searchInput.addEventListener('input', handleSearchInput);
     searchInput.addEventListener('focus', handleSearchInput);
-
-    searchInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        addItem(searchInput.value, selectedColor);
-      }
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); addItem(searchInput.value, selectedColor); }
     });
 
     clearSearchBtn.addEventListener('click', () => {
@@ -772,81 +775,75 @@
       searchInput.focus();
     });
 
-    addBtn.addEventListener('click', () => {
-      addItem(searchInput.value, selectedColor);
-    });
+    addBtn.addEventListener('click', () => addItem(searchInput.value, selectedColor));
 
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.input-section')) {
-        hideAutocomplete();
-      }
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.input-section')) hideAutocomplete();
     });
 
     togglePurchasedHeader.addEventListener('click', () => {
       isPurchasedCollapsed = !isPurchasedCollapsed;
-      localStorage.setItem(STORAGE_KEYS.PURCHASED_COLLAPSED, isPurchasedCollapsed ? 'true' : 'false');
+      localStorage.setItem(STORAGE_KEYS.PURCHASED_COLLAPSED, isPurchasedCollapsed);
       renderPurchasedList();
     });
 
-    // Catalog Modal
+    // Catalog
     catalogBtn.addEventListener('click', () => {
       catalogSearchInput.value = '';
       renderCatalogModal();
       catalogModal.classList.remove('hidden');
     });
-
-    closeCatalogBtn.addEventListener('click', () => {
-      catalogModal.classList.add('hidden');
-    });
-
-    catalogModal.addEventListener('click', (e) => {
-      if (e.target === catalogModal) {
-        catalogModal.classList.add('hidden');
-      }
-    });
-
-    catalogSearchInput.addEventListener('input', () => {
-      renderCatalogModal();
-    });
-
+    closeCatalogBtn.addEventListener('click', () => catalogModal.classList.add('hidden'));
+    catalogModal.addEventListener('click', e => { if (e.target === catalogModal) catalogModal.classList.add('hidden'); });
+    catalogSearchInput.addEventListener('input', renderCatalogModal);
     addAllCatalogBtn.addEventListener('click', () => {
-      catalog.forEach(catItem => {
-        addItem(catItem.name, catItem.colorId);
-      });
+      catalog.forEach(ci => addItem(ci.name, ci.colorId));
       catalogModal.classList.add('hidden');
     });
 
-    // Categories Modal
-    manageCategoriesBtn.addEventListener('click', () => {
-      renderCategoriesModal();
-      categoriesModal.classList.remove('hidden');
-    });
-
-    closeCategoriesBtn.addEventListener('click', () => {
-      categoriesModal.classList.add('hidden');
-    });
-
+    // Categories
+    manageCategoriesBtn.addEventListener('click', () => { renderCategoriesModal(); categoriesModal.classList.remove('hidden'); });
+    closeCategoriesBtn.addEventListener('click', () => categoriesModal.classList.add('hidden'));
     saveCategoriesModalBtn.addEventListener('click', saveCategoriesFromModal);
+    categoriesModal.addEventListener('click', e => { if (e.target === categoriesModal) categoriesModal.classList.add('hidden'); });
 
-    categoriesModal.addEventListener('click', (e) => {
-      if (e.target === categoriesModal) {
-        categoriesModal.classList.add('hidden');
-      }
+    // Sync
+    syncBtn.addEventListener('click', () => { renderSyncModal(); syncModal.classList.remove('hidden'); });
+    closeSyncBtn.addEventListener('click', () => syncModal.classList.add('hidden'));
+    syncModal.addEventListener('click', e => { if (e.target === syncModal) syncModal.classList.add('hidden'); });
+
+    copySyncLinkBtn.addEventListener('click', () => {
+      const url = window.location.href.split('?')[0];
+      navigator.clipboard.writeText(url)
+        .then(() => alert('Hivatkozás másolva! Küld át a másik eszközödre és nyisd meg ott.'))
+        .catch(() => alert('URL: ' + url));
     });
+
+    joinSyncCodeBtn.addEventListener('click', () => {
+      const code = customSyncCodeInput.value.trim();
+      if (code) { window.location.href = code; }
+    });
+
+    forceSyncBtn.addEventListener('click', () => { syncModal.classList.add('hidden'); });
+  }
+
+  // =========================================================================
+  // UTILITIES
+  // =========================================================================
+  function uid() {
+    return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
   }
 
   function escapeHtml(str) {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
+  // =========================================================================
+  // BOOTSTRAP
+  // =========================================================================
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
 })();
