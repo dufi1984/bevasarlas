@@ -470,13 +470,18 @@ body {
   height: 20px;
 }
 
+.color-selector-wrapper.hidden {
+  display: none;
+}
+
 .item-card {
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 12px 16px;
+  min-height: 48px;
   background: var(--bg-card);
   cursor: pointer;
   transition: transform 0.15s ease-out, background 0.2s ease;

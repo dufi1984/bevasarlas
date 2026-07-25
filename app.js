@@ -75,6 +75,7 @@
   const addBtn                 = $('addBtn');
   const autocompleteDropdown    = $('autocompleteDropdown');
   const suggestionsList        = $('suggestionsList');
+  const colorChipsWrapper      = $('colorChipsWrapper');
   const colorChipsContainer    = $('colorChipsContainer');
   const toBuyListGrouped       = $('toBuyListGrouped');
   const toBuyEmpty             = $('toBuyEmpty');
@@ -90,12 +91,19 @@
   const closeCatalogBtn        = $('closeCatalogBtn');
   const catalogSearchInput     = $('catalogSearchInput');
   const catalogItemsList       = $('catalogItemsList');
-  const addAllCatalogBtn       = $('addAllCatalogBtn');
   const manageCategoriesBtn    = $('manageCategoriesBtn');
   const categoriesModal        = $('categoriesModal');
   const closeCategoriesBtn     = $('closeCategoriesBtn');
   const categoriesEditList     = $('categoriesEditList');
   const saveCategoriesModalBtn = $('saveCategoriesModalBtn');
+
+  function showColorChips() {
+    if (colorChipsWrapper) colorChipsWrapper.classList.remove('hidden');
+  }
+
+  function hideColorChips() {
+    if (colorChipsWrapper) colorChipsWrapper.classList.add('hidden');
+  }
 
   // =========================================================================
   // INIT
@@ -274,6 +282,7 @@
     renderAll();
     searchInput.value = '';
     hideAC();
+    hideColorChips();
     clearSearchBtn.classList.add('hidden');
   }
 
@@ -289,12 +298,18 @@
   }
 
   // =========================================================================
-  // AUTOCOMPLETE
+  // AUTOCOMPLETE & COLOR CHIPS VISIBILITY
   // =========================================================================
   function onSearchInput() {
     const q = searchInput.value.trim().toLowerCase();
-    if (q) { clearSearchBtn.classList.remove('hidden'); renderAC(q); }
-    else   { clearSearchBtn.classList.add('hidden'); hideAC(); }
+    if (q) {
+      clearSearchBtn.classList.remove('hidden');
+      renderAC(q);
+      showColorChips();
+    } else {
+      clearSearchBtn.classList.add('hidden');
+      hideAC();
+    }
   }
 
   function renderAC(q) {
@@ -416,9 +431,6 @@
     card.className = `item-card ${item.checked ? 'purchased' : ''}`;
     card.innerHTML = `
       <div class="item-left">
-        <div class="custom-checkbox">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
         <span class="item-title">${esc(item.name)}</span>
       </div>`;
     wrapper.appendChild(card);
@@ -629,13 +641,15 @@
       });
     }
 
-    searchInput.addEventListener('focus', () => { isTyping = true; });
+    searchInput.addEventListener('focus', () => {
+      isTyping = true;
+      showColorChips();
+    });
     searchInput.addEventListener('blur',  () => {
       clearTimeout(typingTimer);
       typingTimer = setTimeout(() => { isTyping = false; }, 1500);
     });
     searchInput.addEventListener('input',   onSearchInput);
-    searchInput.addEventListener('focus',   onSearchInput);
     searchInput.addEventListener('keydown', e => {
       if (e.key === 'Enter') { e.preventDefault(); addItem(searchInput.value, selectedColor); }
     });
@@ -644,13 +658,17 @@
       searchInput.value = '';
       clearSearchBtn.classList.add('hidden');
       hideAC();
+      hideColorChips();
       searchInput.focus();
     });
 
     addBtn.addEventListener('click', () => addItem(searchInput.value, selectedColor));
 
     document.addEventListener('click', e => {
-      if (!e.target.closest('.input-section')) hideAC();
+      if (!e.target.closest('.input-section')) {
+        hideAC();
+        if (!searchInput.value.trim()) hideColorChips();
+      }
     });
 
     togglePurchasedHeader.addEventListener('click', () => {
@@ -668,10 +686,6 @@
     closeCatalogBtn.addEventListener('click', () => catalogModal.classList.add('hidden'));
     catalogModal.addEventListener('click', e => { if (e.target === catalogModal) catalogModal.classList.add('hidden'); });
     catalogSearchInput.addEventListener('input', renderCatalogModal);
-    addAllCatalogBtn.addEventListener('click', () => {
-      catalog.forEach(ci => addItem(ci.name, ci.colorId));
-      catalogModal.classList.add('hidden');
-    });
 
     // Kategória modal
     manageCategoriesBtn.addEventListener('click', () => { renderCategoriesModal(); categoriesModal.classList.remove('hidden'); });

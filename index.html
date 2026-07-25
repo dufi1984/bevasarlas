@@ -17,7 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=2">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <div class="app-container">
@@ -58,7 +58,7 @@
         <div class="search-icon-inside">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </div>
-        <input type="text" id="searchInput" placeholder="Keresés vagy új tétel pl. tej, kifli, sajt..." autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Keresés" autocomplete="off">
         <button id="clearSearchBtn" class="clear-input-btn hidden" aria-label="Kereső törlése">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
@@ -67,8 +67,8 @@
         </button>
       </div>
 
-      <!-- Color Selector Chips -->
-      <div class="color-selector-wrapper">
+      <!-- Color Selector Chips (hidden by default, shown when adding) -->
+      <div class="color-selector-wrapper hidden" id="colorChipsWrapper">
         <div class="color-chips" id="colorChipsContainer">
           <!-- Populated by JS -->
         </div>
@@ -142,10 +142,6 @@
         <div id="catalogItemsList" class="catalog-items-list">
           <!-- Populated by JS -->
         </div>
-
-        <div class="modal-footer">
-          <button id="addAllCatalogBtn" class="secondary-btn">Összes hozzáadása</button>
-        </div>
       </div>
     </div>
 
@@ -161,7 +157,7 @@
               <circle cx="17.5" cy="17.5" r="3"/>
               <path d="m21 21-1.5-1.5"/>
             </svg>
-            <h3>Kategóriák sorrendje & átnevezése</h3>
+            <h3>Kategóriák</h3>
           </div>
           <button class="close-modal-btn" id="closeCategoriesBtn" aria-label="Bezárás">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
@@ -182,6 +178,6 @@
 
   </div>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>
