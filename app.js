@@ -153,7 +153,8 @@
     }
   }
 
-  let isPushing = false;
+  let isPushing  = false;
+  let lastPushTs = 0;
 
   function saveState() {
     const ts = saveLocal();
@@ -186,7 +187,8 @@
       const remoteTs = remote.ts || 0;
       const localTs  = parseInt(localStorage.getItem(SK.TS) || '0', 10);
 
-      if (remoteTs > localTs) {
+      // Szigorú frissítési szabály: csak frissebb remote fogadható el
+      if (remoteTs > localTs && remoteTs > lastPushTs) {
         if (remote.items)      items      = remote.items;
         if (remote.catalog)    catalog    = remote.catalog;
         if (remote.categories && remote.categories.length > 0)
@@ -202,6 +204,7 @@
 
   function pushGist(ts) {
     isPushing = true;
+    lastPushTs = ts;
     const payload = JSON.stringify({ items, catalog, categories, ts });
     fetch(`https://api.github.com/gists/${GIST_ID}`, {
       method: 'PATCH',
@@ -215,7 +218,7 @@
       })
     })
     .then(() => {
-      setTimeout(() => { isPushing = false; }, 1000);
+      setTimeout(() => { isPushing = false; }, 3000);
     })
     .catch(() => {
       isPushing = false;
@@ -298,6 +301,10 @@
   }
 
   function deleteItem(id) {
+    const target = items.find(i => i.id === id);
+    if (target) {
+      catalog = catalog.filter(c => c.name.toLowerCase() !== target.name.toLowerCase());
+    }
     items = items.filter(i => i.id !== id);
     saveState();
     renderAll();
