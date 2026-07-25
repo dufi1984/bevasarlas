@@ -3,14 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Bevásárló Lista</title>
+  <title>Bevásárló lista</title>
+  
+  <!-- Web App Manifest & App Icon -->
+  <meta name="apple-mobile-web-app-title" content="Bevásárló lista">
+  <meta name="application-name" content="Bevásárló lista">
+  <meta name="theme-color" content="#10b981">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%2310b981'/><path d='M30 25 L25 40 L75 40 L70 25 Z M20 40 L25 80 C25 83 27 85 30 85 L70 85 C73 85 75 83 75 80 L80 40 Z' fill='none' stroke='white' stroke-width='6' stroke-linejoin='round'/><circle cx='40' cy='55' r='5' fill='white'/><circle cx='60' cy='55' r='5' fill='white'/></svg>">
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="app-container">
+    
     <!-- Header -->
     <header class="app-header">
       <div class="header-content">
@@ -22,7 +33,6 @@
         </div>
         <div class="header-actions">
           <button id="manageCategoriesBtn" class="icon-btn" title="Kategóriák kezelése" aria-label="Kategóriák">
-            <!-- Grid+Search icon (4 squares + lupa) -->
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="2" width="8" height="8" rx="2"/>
               <rect x="14" y="2" width="8" height="8" rx="2"/>
@@ -31,9 +41,8 @@
               <path d="m21 21-1.5-1.5"/>
             </svg>
           </button>
-          <button id="catalogBtn" class="icon-btn" title="Könyvtár / Előzmények" aria-label="Könyvtár">
+          <button id="catalogBtn" class="icon-btn" title="Tétel-könyvtár" aria-label="Könyvtár">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
-            <span class="badge-count" id="catalogBadge">0</span>
           </button>
           <button id="themeToggle" class="icon-btn" title="Téma váltása" aria-label="Téma váltása">
             <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
@@ -50,92 +59,84 @@
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </div>
         <input type="text" id="searchInput" placeholder="Keresés vagy új tétel pl. tej, kifli, sajt..." autocomplete="off">
-        <button id="clearSearchBtn" class="clear-search-btn hidden" aria-label="Keresés törlése">
+        <button id="clearSearchBtn" class="clear-input-btn hidden" aria-label="Kereső törlése">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
-        <button id="addBtn" class="add-btn" title="Hozzáadás a listához" aria-label="Tétel hozzáadása">
+        <button id="addBtn" class="add-item-btn" aria-label="Tétel hozzáadása">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
         </button>
       </div>
 
-      <!-- Autocomplete Dropdown Suggestions -->
-      <div id="autocompleteDropdown" class="autocomplete-dropdown hidden">
-        <div class="dropdown-header">Előzőleg elmentett tételek</div>
-        <div id="suggestionsList" class="suggestions-list"></div>
+      <!-- Color Selector Chips -->
+      <div class="color-selector-wrapper">
+        <div class="color-chips" id="colorChipsContainer">
+          <!-- Populated by JS -->
+        </div>
       </div>
 
-      <!-- Preset Color Selector Chips -->
-      <div class="color-chips-wrapper">
-        <span class="color-label">Kategória:</span>
-        <div class="color-chips" id="colorChipsContainer">
-          <!-- Rendered dynamically by JS -->
+      <!-- Autocomplete Dropdown -->
+      <div id="autocompleteDropdown" class="autocomplete-dropdown hidden">
+        <div id="suggestionsList" class="suggestions-list">
+          <!-- Populated by JS -->
         </div>
       </div>
     </section>
 
-    <!-- Main Content Area with Grouped Lists -->
-    <main class="lists-container">
-
-      <!-- Active Shopping List (To Buy Grouped by Categories) -->
-      <section class="list-section">
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Section 1: Megvásárolandó tételek (Kategóriák szerint csoportosítva) -->
+      <section class="list-section to-buy-section">
         <div class="section-header">
-          <div class="section-title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-            <h2>Megvásárolandó</h2>
-            <span class="count-pill" id="toBuyCount">0</span>
-          </div>
+          <h2>Megvásárolandó</h2>
+          <span class="count-badge" id="toBuyCount">0</span>
         </div>
 
-        <div id="toBuyListGrouped" class="items-group-list">
+        <div id="toBuyListGrouped" class="grouped-items-container">
           <!-- Empty State -->
-          <div class="empty-state" id="toBuyEmpty">
+          <div id="toBuyEmpty" class="empty-state">
             <div class="empty-icon">🛒</div>
-            <p class="empty-title">A lista jelenleg üres</p>
-            <p class="empty-desc">Írd be fent a kívánt tételt vagy válassz az elmentett előzményekből!</p>
+            <p class="empty-title">Üres a bevásárló listád</p>
+            <p class="empty-desc">Írj be egy tételt a fenti keresőbe a hozzáadáshoz!</p>
           </div>
+          <!-- Category groups dynamically rendered here -->
         </div>
       </section>
 
-      <!-- Completed Shopping List (Purchased) -->
+      <!-- Section 2: Már megvásárolt tételek -->
       <section class="list-section purchased-section">
-        <div class="section-header clickable" id="togglePurchasedHeader">
-          <div class="section-title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div class="section-header collapsible-header" id="togglePurchasedHeader">
+          <div class="section-header-left">
+            <svg class="chevron-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             <h2>Már megvásárolt</h2>
-            <span class="count-pill muted" id="purchasedCount">0</span>
           </div>
-          <button class="collapse-btn" id="collapseBtn" aria-label="Összecsukás">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-          </button>
+          <span class="count-badge muted" id="purchasedCount">0</span>
         </div>
 
-        <div id="purchasedList" class="items-list">
-          <div class="empty-state small" id="purchasedEmpty">
-            <p class="empty-desc">Még nem pipáltál ki semmit</p>
+        <div id="purchasedList" class="items-list purchased-list">
+          <div id="purchasedEmpty" class="empty-state small hidden">
+            <p class="empty-desc">Még nem vásároltál meg semmit.</p>
           </div>
         </div>
       </section>
 
     </main>
 
-    <!-- Master Catalog / History Modal -->
+    <!-- Master Catalog Modal -->
     <div id="catalogModal" class="modal-overlay hidden">
       <div class="modal-card">
         <div class="modal-header">
           <div class="modal-title">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
-            <h3>Tétel-könyvtár (Előzmények)</h3>
+            <h3>Tétel-könyvtár</h3>
           </div>
           <button class="close-modal-btn" id="closeCatalogBtn" aria-label="Bezárás">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
         
-        <p class="modal-subtext">Az összes elmentett tételed (pl. tej, kifli, sajt). Érintsd meg a listára tevéshez!</p>
-
-        <div class="modal-search">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-          <input type="text" id="catalogSearchInput" placeholder="Szűrés a könyvtárban...">
+        <div class="modal-search-wrapper">
+          <input type="text" id="catalogSearchInput" placeholder="Keresés a könyvtárban..." autocomplete="off">
         </div>
 
         <div id="catalogItemsList" class="catalog-items-list">
@@ -143,10 +144,7 @@
         </div>
 
         <div class="modal-footer">
-          <button id="addAllCatalogBtn" class="secondary-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-            Mindet hozzáad a listához
-          </button>
+          <button id="addAllCatalogBtn" class="secondary-btn">Összes hozzáadása</button>
         </div>
       </div>
     </div>
@@ -156,15 +154,21 @@
       <div class="modal-card">
         <div class="modal-header">
           <div class="modal-title">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            <h3>Kategóriák átnevezése</h3>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="2" width="8" height="8" rx="2"/>
+              <rect x="14" y="2" width="8" height="8" rx="2"/>
+              <rect x="2" y="14" width="8" height="8" rx="2"/>
+              <circle cx="17.5" cy="17.5" r="3"/>
+              <path d="m21 21-1.5-1.5"/>
+            </svg>
+            <h3>Kategóriák sorrendje & átnevezése</h3>
           </div>
           <button class="close-modal-btn" id="closeCategoriesBtn" aria-label="Bezárás">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
           </button>
         </div>
         
-        <p class="modal-subtext">Nevezd át a színkategóriákat a saját boltod sorrendjéhez/részlegeihez mérten!</p>
+        <p class="modal-subtext">Fogd meg a ⠿ ikont a sorrend változtatásához, vagy írd át a nevet!</p>
 
         <div id="categoriesEditList" class="categories-edit-list">
           <!-- Populated by JS -->
@@ -175,8 +179,6 @@
         </div>
       </div>
     </div>
-
-
 
   </div>
 
