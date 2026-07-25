@@ -502,8 +502,13 @@
   // KATALÓGUS MODAL (ABC sorrend + Single + Hozzáadás / ✓ Hozzáadva gomb)
   // =========================================================================
   function deleteCatalogItem(id) {
+    const target = catalog.find(c => c.id === id);
+    if (target) {
+      items = items.filter(i => i.name.toLowerCase() !== target.name.toLowerCase());
+    }
     catalog = catalog.filter(c => c.id !== id);
     saveState();
+    renderAll();
     renderCatalogModal();
   }
 
