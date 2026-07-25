@@ -622,6 +622,13 @@
   function setupEvents() {
     themeToggleBtn.addEventListener('click', toggleTheme);
 
+    const brandLogo = $('brandLogo');
+    if (brandLogo) {
+      brandLogo.addEventListener('click', () => {
+        window.location.href = window.location.pathname + '?v=' + Date.now();
+      });
+    }
+
     searchInput.addEventListener('focus', () => { isTyping = true; });
     searchInput.addEventListener('blur',  () => {
       clearTimeout(typingTimer);
