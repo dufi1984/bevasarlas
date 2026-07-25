@@ -9,7 +9,7 @@ body.no-select * {
 }
 
 :root {
-  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
   
   --bg-primary: #0f172a;
   --bg-card: #1e293b;
@@ -19,8 +19,8 @@ body.no-select * {
   --border-focus: #10b981;
   
   --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  --text-muted: #cbd5e1;
+  --text-dim: #94a3b8;
   
   --accent: #10b981;
   --accent-hover: #059669;
@@ -436,7 +436,7 @@ body {
   align-items: center;
   gap: 8px;
   font-weight: 400;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
 }
 
 .category-dot {

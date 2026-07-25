@@ -622,7 +622,8 @@
     const brandLogo = $('brandLogo');
     if (brandLogo) {
       brandLogo.addEventListener('click', () => {
-        window.location.href = window.location.pathname + '?v=' + Date.now();
+        fetchGist();
+        window.location.reload();
       });
     }
 
