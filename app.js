@@ -610,6 +610,18 @@
     renderCategoriesModal();
   }
 
+  function showModal(modal) {
+    modal.classList.remove('hidden');
+    document.body.classList.add('modal-open');
+  }
+
+  function hideModal(modal) {
+    modal.classList.add('hidden');
+    if (!document.querySelector('.modal:not(.hidden)')) {
+      document.body.classList.remove('modal-open');
+    }
+  }
+
   function saveCategoriesFromModal() {
     categoriesEditList.querySelectorAll('input[data-id]').forEach(inp => {
       const cat = categories.find(c => c.id === inp.dataset.id);
@@ -618,7 +630,7 @@
     saveState();
     renderColorChips();
     renderAll();
-    categoriesModal.classList.add('hidden');
+    hideModal(categoriesModal);
   }
 
   // =========================================================================
@@ -675,17 +687,17 @@
     catalogBtn.addEventListener('click', () => {
       catalogSearchInput.value = '';
       renderCatalogModal();
-      catalogModal.classList.remove('hidden');
+      showModal(catalogModal);
     });
-    closeCatalogBtn.addEventListener('click', () => catalogModal.classList.add('hidden'));
-    catalogModal.addEventListener('click', e => { if (e.target === catalogModal) catalogModal.classList.add('hidden'); });
+    closeCatalogBtn.addEventListener('click', () => hideModal(catalogModal));
+    catalogModal.addEventListener('click', e => { if (e.target === catalogModal) hideModal(catalogModal); });
     catalogSearchInput.addEventListener('input', renderCatalogModal);
 
     // Kategória modal
-    manageCategoriesBtn.addEventListener('click', () => { renderCategoriesModal(); categoriesModal.classList.remove('hidden'); });
-    closeCategoriesBtn.addEventListener('click', () => categoriesModal.classList.add('hidden'));
+    manageCategoriesBtn.addEventListener('click', () => { renderCategoriesModal(); showModal(categoriesModal); });
+    closeCategoriesBtn.addEventListener('click', () => hideModal(categoriesModal));
     saveCategoriesModalBtn.addEventListener('click', saveCategoriesFromModal);
-    categoriesModal.addEventListener('click', e => { if (e.target === categoriesModal) categoriesModal.classList.add('hidden'); });
+    categoriesModal.addEventListener('click', e => { if (e.target === categoriesModal) hideModal(categoriesModal); });
   }
 
   // =========================================================================
