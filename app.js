@@ -153,9 +153,11 @@
     }
   }
 
+  let isPushing = false;
+
   function saveState() {
     const ts = saveLocal();
-    scheduleGistPush(ts);
+    pushGist(ts);
   }
 
   // =========================================================================
@@ -167,9 +169,8 @@
   }
 
   function fetchGist() {
-    if (isTyping) return;
+    if (isTyping || isPushing) return;
 
-    // ?cacheBust=${Date.now()} a böngésző cache megkerülésére
     fetch(`https://api.github.com/gists/${GIST_ID}?cacheBust=${Date.now()}`, {
       headers: {
         'Authorization': `token ${GIST_TOKEN}`,
@@ -178,7 +179,7 @@
     })
     .then(r => r.ok ? r.json() : null)
     .then(data => {
-      if (!data) return;
+      if (!data || isPushing) return;
       const raw = data.files[GIST_FILE]?.content;
       if (!raw) return;
       const remote = JSON.parse(raw);
@@ -199,12 +200,8 @@
     .catch(() => {});
   }
 
-  function scheduleGistPush(ts) {
-    clearTimeout(window._gistPushTimer);
-    window._gistPushTimer = setTimeout(() => pushGist(ts), 800);
-  }
-
   function pushGist(ts) {
+    isPushing = true;
     const payload = JSON.stringify({ items, catalog, categories, ts });
     fetch(`https://api.github.com/gists/${GIST_ID}`, {
       method: 'PATCH',
@@ -217,7 +214,12 @@
         files: { [GIST_FILE]: { content: payload } }
       })
     })
-    .catch(() => {});
+    .then(() => {
+      setTimeout(() => { isPushing = false; }, 1000);
+    })
+    .catch(() => {
+      isPushing = false;
+    });
   }
 
   // =========================================================================
@@ -466,36 +468,41 @@
 
   function setupSwipe(card, wrapper, id) {
     let sx = 0, cx = 0, active = false;
-    card.addEventListener('touchstart', e => {
-      sx = e.touches[0].clientX;
-      cx = sx;
+
+    function start(x) {
+      sx = x;
+      cx = x;
       active = true;
       card.classList.add('swiping');
-    }, { passive: true });
+    }
 
-    card.addEventListener('touchmove', e => {
+    function move(x) {
       if (!active) return;
-      cx = e.touches[0].clientX;
+      cx = x;
       const dx = cx - sx;
       if (dx < 0) {
         card.style.transform = `translateX(${dx}px)`;
-        if (dx < -15) card.dataset.swiped = 'true';
+        if (dx < -10) card.dataset.swiped = 'true';
       }
-    }, { passive: true });
+    }
 
-    card.addEventListener('touchend', () => {
+    function end() {
       if (!active) return;
       active = false;
       card.classList.remove('swiping');
-      if ((cx - sx) <= -80) doSwipeDelete(wrapper, id);
+      if ((cx - sx) <= -50) doSwipeDelete(wrapper, id);
       else card.style.transform = 'translateX(0)';
-    });
+    }
 
-    card.addEventListener('touchcancel', () => {
-      active = false;
-      card.classList.remove('swiping');
-      card.style.transform = 'translateX(0)';
-    });
+    card.addEventListener('touchstart', e => start(e.touches[0].clientX), { passive: true });
+    card.addEventListener('touchmove', e => move(e.touches[0].clientX), { passive: true });
+    card.addEventListener('touchend', end);
+    card.addEventListener('touchcancel', end);
+
+    card.addEventListener('mousedown', e => start(e.clientX));
+    card.addEventListener('mousemove', e => move(e.clientX));
+    card.addEventListener('mouseup', end);
+    card.addEventListener('mouseleave', end);
   }
 
   // =========================================================================
