@@ -19,70 +19,73 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=15">
+  <link rel="stylesheet" href="styles.css?v=16">
 </head>
 <body>
   <div class="app-container">
     
-    <!-- Header -->
-    <header class="app-header">
-      <div class="header-content">
-        <div class="brand" id="brandLogo" title="Kattints ide a lap azonnali frissítéséhez!" style="cursor: pointer;">
-          <div class="brand-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    <!-- Sticky Top Bar (Header + Search Box + Status Bar Shield) -->
+    <div class="sticky-top-bar">
+      <!-- Header -->
+      <header class="app-header">
+        <div class="header-content">
+          <div class="brand" id="brandLogo" title="Kattints ide a lap azonnali frissítéséhez!" style="cursor: pointer;">
+            <div class="brand-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <h1>Bevásárló lista</h1>
           </div>
-          <h1>Bevásárló lista</h1>
+          <div class="header-actions">
+            <button id="manageCategoriesBtn" class="icon-btn" title="Kategóriák kezelése" aria-label="Kategóriák">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="8" height="8" rx="2"/>
+                <rect x="14" y="2" width="8" height="8" rx="2"/>
+                <rect x="2" y="14" width="8" height="8" rx="2"/>
+                <circle cx="17.5" cy="17.5" r="3"/>
+                <path d="m21 21-1.5-1.5"/>
+              </svg>
+            </button>
+            <button id="catalogBtn" class="icon-btn" title="Tételek" aria-label="Tételek">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
+            </button>
+            <button id="themeToggle" class="icon-btn" title="Téma váltása" aria-label="Téma váltása">
+              <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+              <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+            </button>
+          </div>
         </div>
-        <div class="header-actions">
-          <button id="manageCategoriesBtn" class="icon-btn" title="Kategóriák kezelése" aria-label="Kategóriák">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="2" width="8" height="8" rx="2"/>
-              <rect x="14" y="2" width="8" height="8" rx="2"/>
-              <rect x="2" y="14" width="8" height="8" rx="2"/>
-              <circle cx="17.5" cy="17.5" r="3"/>
-              <path d="m21 21-1.5-1.5"/>
-            </svg>
-          </button>
-          <button id="catalogBtn" class="icon-btn" title="Tételek" aria-label="Tételek">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
-          </button>
-          <button id="themeToggle" class="icon-btn" title="Téma váltása" aria-label="Téma váltása">
-            <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-            <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-          </button>
-        </div>
-      </div>
-    </header>
+      </header>
 
-    <!-- Search & Input Section -->
-    <section class="input-section">
-      <div class="search-input-wrapper">
-        <div class="search-icon-inside">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <!-- Search & Input Section -->
+      <section class="input-section">
+        <div class="search-input-wrapper">
+          <div class="search-icon-inside">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <input type="text" id="searchInput" placeholder="Keresés" autocomplete="off">
+          <button id="clearSearchBtn" class="clear-input-btn hidden" aria-label="Kereső törlése">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+          <button id="addBtn" class="add-item-btn" aria-label="Tétel hozzáadása">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          </button>
         </div>
-        <input type="text" id="searchInput" placeholder="Keresés" autocomplete="off">
-        <button id="clearSearchBtn" class="clear-input-btn hidden" aria-label="Kereső törlése">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
-        <button id="addBtn" class="add-item-btn" aria-label="Tétel hozzáadása">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-        </button>
-      </div>
 
-      <!-- Color Selector Chips (hidden by default, shown when adding) -->
-      <div class="color-selector-wrapper hidden" id="colorChipsWrapper">
-        <div class="color-chips" id="colorChipsContainer">
-          <!-- Populated by JS -->
+        <!-- Color Selector Chips (hidden by default, shown when adding) -->
+        <div class="color-selector-wrapper hidden" id="colorChipsWrapper">
+          <div class="color-chips" id="colorChipsContainer">
+            <!-- Populated by JS -->
+          </div>
         </div>
-      </div>
 
-      <!-- Autocomplete Dropdown -->
-      <div id="autocompleteDropdown" class="autocomplete-dropdown hidden">
-        <div id="suggestionsList" class="suggestions-list">
-          <!-- Populated by JS -->
+        <!-- Autocomplete Dropdown -->
+        <div id="autocompleteDropdown" class="autocomplete-dropdown hidden">
+          <div id="suggestionsList" class="suggestions-list">
+            <!-- Populated by JS -->
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <!-- Main Content Area -->
     <main class="main-content">
@@ -178,6 +181,6 @@
 
   </div>
 
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

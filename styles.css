@@ -88,8 +88,8 @@ body {
   padding: 16px;
 }
 
-/* Header - Sticky with Status Bar & Dynamic Island Protection */
-.app-header {
+/* Sticky Top Bar (Header + Search Box + Status Bar Protection) */
+.sticky-top-bar {
   position: sticky;
   top: 0;
   z-index: 100;
@@ -100,8 +100,13 @@ body {
   margin-right: -16px;
   padding-left: 16px;
   padding-right: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
   border-bottom: 1px solid var(--border-color);
+}
+
+/* Header */
+.app-header {
+  margin-bottom: 14px;
 }
 
 .header-content {
