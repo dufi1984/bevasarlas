@@ -40,12 +40,12 @@ body.no-select * {
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
   --cat-green: #10b981;
-  --cat-yellow: #f59e0b;
+  --cat-yellow: #facc15;
   --cat-blue: #3b82f6;
   --cat-red: #ef4444;
   --cat-orange: #f97316;
-  --cat-purple: #a855f7;
-  --cat-magenta: #d946ef;
+  --cat-purple: #8b5cf6;
+  --cat-magenta: #ec4899;
   --cat-gray: #6b7280;
 }
 
