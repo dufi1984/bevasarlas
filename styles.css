@@ -88,10 +88,20 @@ body {
   padding: 16px;
 }
 
-/* Header */
+/* Header - Sticky with Status Bar & Dynamic Island Protection */
 .app-header {
-  margin-bottom: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-primary);
   padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: 12px;
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .header-content {
