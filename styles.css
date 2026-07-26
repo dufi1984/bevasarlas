@@ -91,6 +91,7 @@ body {
 /* Header */
 .app-header {
   margin-bottom: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
 }
 
 .header-content {
