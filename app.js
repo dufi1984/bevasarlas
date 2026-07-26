@@ -30,13 +30,14 @@
   // DEFAULT ADATOK
   // =========================================================================
   const DEFAULT_CATEGORIES = [
-    { id: 'green',  name: 'Zöldség & Gyümölcs',    color: '#10b981', order: 0 },
-    { id: 'yellow', name: 'Pékáru & Sajtok',         color: '#f59e0b', order: 1 },
-    { id: 'blue',   name: 'Tejtermék & Hűtött',      color: '#3b82f6', order: 2 },
-    { id: 'red',    name: 'Hús & Mészáros',           color: '#ef4444', order: 3 },
-    { id: 'orange', name: 'Italok & Nasik',           color: '#f97316', order: 4 },
-    { id: 'purple', name: 'Édesség & Különlegesség',  color: '#a855f7', order: 5 },
-    { id: 'gray',   name: 'Egyéb & Háztartás',        color: '#6b7280', order: 6 }
+    { id: 'green',   name: 'Zöldség & Gyümölcs',    color: '#10b981', order: 0 },
+    { id: 'yellow',  name: 'Pékáru & Sajtok',         color: '#f59e0b', order: 1 },
+    { id: 'blue',    name: 'Tejtermék & Hűtött',      color: '#3b82f6', order: 2 },
+    { id: 'red',     name: 'Hús & Mészáros',           color: '#ef4444', order: 3 },
+    { id: 'orange',  name: 'Italok & Nasik',           color: '#f97316', order: 4 },
+    { id: 'purple',  name: 'Édesség & Különlegesség',  color: '#a855f7', order: 5 },
+    { id: 'magenta', name: 'Mélyhűtött áruk',         color: '#d946ef', order: 6 },
+    { id: 'gray',    name: 'Egyéb & Háztartás',        color: '#6b7280', order: 7 }
   ];
 
   const DEFAULT_CATALOG = [
