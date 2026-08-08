@@ -16,7 +16,7 @@
   // Push értesítések
   const WORKER_URL      = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
   const VAPID_PUBLIC_KEY = 'BPYMM3cjcVvoTir84pHOEXMnDbuk8nVgtelRIUapdnaYBTv7vJ7b8nKSlLFPSuFymGU1euGx3zyxi4DO-jymrNI';
-  const NOTIFY_DELAY_MS  = 10000; // 10 másodperces debounce
+  const NOTIFY_DELAY_MS  = 5000; // 5 másodperces debounce
 
   // =========================================================================
   // LOCAL STORAGE KEYS
@@ -880,6 +880,7 @@
           loadLocal();
           fetchGist();
           renderAll();
+          setupPushNotifications();
         }
       });
     }
