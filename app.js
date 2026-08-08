@@ -163,21 +163,22 @@
 
   async function setupPushNotifications() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    if (!activeRoom) return;
 
     try {
-      const permission = await Notification.requestPermission();
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
       if (permission !== 'granted') return;
 
-      // Először regisztráljuk a Service Worker-t kifejezetten
-      const reg = await navigator.serviceWorker.register('./sw.js?v=18');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=19');
       await navigator.serviceWorker.ready;
 
-      // Tájékoztasd a SW-t az aktív szobáról
       if (reg.active) {
         reg.active.postMessage({ type: 'SET_ROOM', room: activeRoom });
       }
 
-      // Meglévő subscription ellenőrzése vagy új létrehozása
       let subscription = await reg.pushManager.getSubscription();
       if (!subscription) {
         subscription = await reg.pushManager.subscribe({
@@ -186,7 +187,6 @@
         });
       }
 
-      // Saját endpoint mentve – ez alapján a Worker kihagyja ezt az eszközt a push-ból
       ownPushEndpoint = subscription.endpoint;
 
       // Subscription tárolása a Cloudflare Worker-en keresztül a Gist-be
@@ -194,10 +194,9 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ room: activeRoom, subscription: subscription.toJSON() })
-      }).catch(() => {});
-
+      });
     } catch (e) {
-      // Push engedélyezés sikertelen – csendben figyelmen kívül hagyjuk
+      console.warn('Push setup error:', e);
     }
   }
 
@@ -796,9 +795,17 @@
   function setupEvents() {
     themeToggleBtn.addEventListener('click', toggleTheme);
 
+    // User gesture trigger for iOS push registration
+    const triggerPushSetup = () => {
+      if (activeRoom) setupPushNotifications();
+    };
+    window.addEventListener('touchstart', triggerPushSetup, { once: true });
+    window.addEventListener('click', triggerPushSetup, { once: true });
+
     const brandLogo = $('brandLogo');
     if (brandLogo) {
       brandLogo.addEventListener('click', () => {
+        setupPushNotifications();
         fetchGist();
         window.location.reload();
       });
