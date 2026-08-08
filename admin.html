@@ -44,8 +44,7 @@
     <main class="admin-main">
       <div id="adminNotice" class="empty-state" style="margin-top:20px;">
         <div class="empty-icon">🔒</div>
-        <p class="empty-title">Admin Hitelesítés Szükséges</p>
-        <p class="empty-desc">Jelentkezz be a <strong>tamas.duffek@gmail.com</strong> Google fiókkal a szobák ellenőrzéséhez és kezeléséhez.</p>
+        <p class="empty-title">Admin Bejelentkezés Szükséges</p>
       </div>
 
       <div id="adminPanel" class="hidden">
@@ -76,16 +75,24 @@
 
     let currentUser = null;
 
-    // Login via Google Sign-In
+    // Bejelentkezés Google-lal (redirect alapú – mobilon és GitHub Pages-en megbízható)
     googleLoginBtn.addEventListener('click', () => {
       const provider = new firebase.auth.GoogleAuthProvider();
-      firebase.auth().signInWithPopup(provider).catch(err => {
-        alert('Bejelentkezési hiba: ' + err.message);
+      provider.setCustomParameters({ prompt: 'select_account' });
+      firebase.auth().signInWithRedirect(provider).catch(err => {
+        alert('Hiba: ' + err.message);
       });
     });
 
     googleLogoutBtn.addEventListener('click', () => {
       firebase.auth().signOut();
+    });
+
+    // Redirect visszatérés kezelése
+    firebase.auth().getRedirectResult().catch(err => {
+      if (err.code !== 'auth/no-auth-event') {
+        alert('Bejelentkezési hiba: ' + err.message);
+      }
     });
 
     firebase.auth().onAuthStateChanged(user => {
@@ -108,7 +115,7 @@
         googleLoginBtn.classList.remove('hidden');
         userInfo.classList.add('hidden');
         adminNotice.classList.remove('hidden');
-        adminNotice.innerHTML = `<div class="empty-icon">🔒</div><p class="empty-title">Admin Hitelesítés Szükséges</p><p class="empty-desc">Jelentkezz be a <strong>tamas.duffek@gmail.com</strong> Google fiókkal a szobák ellenőrzéséhez és kezeléséhez.</p>`;
+        adminNotice.innerHTML = '<div class="empty-icon">🔒</div><p class="empty-title">Admin Bejelentkezés Szükséges</p>';
         adminPanel.classList.add('hidden');
       }
     });
