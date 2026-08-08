@@ -136,8 +136,14 @@
       .then(r => r.json())
       .then(data => {
         const raw = data.files['bevasarlas.json']?.content;
-        const json = raw ? JSON.parse(raw) : {};
-        const rooms = json.rooms || { 'otthon': { items: json.items || [], catalog: json.catalog || [], updatedAt: json.ts || Date.now() } };
+        const rooms = { ...(json.rooms || {}) };
+        if (!rooms['otthon']) {
+          rooms['otthon'] = {
+            items: json.items || [],
+            catalog: json.catalog || [],
+            updatedAt: json.ts || Date.now()
+          };
+        }
         
         renderRoomsList(rooms);
       })
