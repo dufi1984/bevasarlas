@@ -879,7 +879,6 @@
           fetchGist();
           renderAll();
         }
-        pushGist(Date.now());
       });
     }
 
