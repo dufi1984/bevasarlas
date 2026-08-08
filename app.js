@@ -76,6 +76,7 @@
   let notifyTimer          = null;  // 10s debounce push értesítéshez
   let notifyChangeCount    = 0;     // hány változás halmozódott fel
   let ownPushEndpoint      = null;  // saját eszköz push subscription endpoint-ja
+  let pushSubscribed       = false; // sikeresen regisztrálódott-e a push token a DB-be
   let appStarted           = false; // első initén false, szoba belépés után true
 
   // DOM References
@@ -189,12 +190,18 @@
 
       ownPushEndpoint = subscription.endpoint;
 
-      // Subscription tárolása a Cloudflare Worker-en keresztül a Gist-be
-      await fetch(`${WORKER_URL}/subscribe`, {
+      // Subscription tárolása a Cloudflare Worker-en keresztül a Gist-be.
+      // Ha a szoba még nem létezik a DB-ben (room_not_found), az első tétel
+      // hozzáadása után a pushGist() hívja meg újra ezt a függvényt.
+      const subRes = await fetch(`${WORKER_URL}/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ room: activeRoom, subscription: subscription.toJSON() })
       });
+      const subData = await subRes.json().catch(() => ({}));
+      if (subData.ok) {
+        pushSubscribed = true;
+      }
     } catch (e) {
       console.warn('Push setup error:', e);
     }
@@ -392,6 +399,11 @@
     })
     .then(() => {
       setTimeout(() => { isPushing = false; }, 3000);
+      // Ha a push feliratkozás még nem sikerült (szoba nem létezett), próbáljuk meg újra
+      // most hogy a szoba már létrejött az adatbázisban.
+      if (!pushSubscribed) {
+        setupPushNotifications();
+      }
     })
     .catch(() => {
       isPushing = false;
