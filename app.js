@@ -55,8 +55,9 @@
   ];
 
   // =========================================================================
-  // STATE
+  // STATE & ROOM MANAGER
   // =========================================================================
+  let activeRoom           = (localStorage.getItem('bev_active_room_v1') || 'otthon').toLowerCase().trim();
   let categories           = [];
   let catalog              = [];
   let items                = [];
@@ -65,10 +66,10 @@
   let isPurchasedCollapsed = false;
   let isTyping             = false;
   let typingTimer          = null;
+  let isPushing            = false;
+  let lastPushTs           = 0;
 
-  // =========================================================================
-  // DOM REFERENCIÁK
-  // =========================================================================
+  // DOM References
   const $ = id => document.getElementById(id);
   const html                   = document.documentElement;
   const searchInput            = $('searchInput');
@@ -97,6 +98,10 @@
   const closeCategoriesBtn     = $('closeCategoriesBtn');
   const categoriesEditList     = $('categoriesEditList');
   const saveCategoriesModalBtn = $('saveCategoriesModalBtn');
+  const leaveRoomBtn           = $('leaveRoomBtn');
+  const roomModal              = $('roomModal');
+  const roomInput              = $('roomInput');
+  const joinRoomBtn            = $('joinRoomBtn');
 
   function showColorChips() {
     if (colorChipsWrapper) colorChipsWrapper.classList.remove('hidden');
@@ -116,13 +121,21 @@
     setupEvents();
     renderAll();
     startGistSync();
+
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
   }
 
   // =========================================================================
-  // LOCAL STORAGE
+  // LOCAL STORAGE (Room-Isolated)
   // =========================================================================
+  function getRoomSK(key) {
+    return `${key}_${activeRoom}`;
+  }
+
   function loadLocal() {
-    const storedCats = tryParse(localStorage.getItem(SK.CATEGORIES), null);
+    const storedCats = tryParse(localStorage.getItem(getRoomSK(SK.CATEGORIES)), null);
     if (storedCats && Array.isArray(storedCats) && storedCats.length > 0) {
       categories = storedCats;
       DEFAULT_CATEGORIES.forEach(def => {
@@ -134,8 +147,8 @@
     }
     sortCats();
 
-    catalog   = tryParse(localStorage.getItem(SK.CATALOG), DEFAULT_CATALOG.map(c=>({...c})));
-    items     = tryParse(localStorage.getItem(SK.ITEMS),   []);
+    catalog   = tryParse(localStorage.getItem(getRoomSK(SK.CATALOG)), DEFAULT_CATALOG.map(c=>({...c})));
+    items     = tryParse(localStorage.getItem(getRoomSK(SK.ITEMS)),   []);
     theme     = localStorage.getItem(SK.THEME) || 'dark';
     selectedColor        = localStorage.getItem(SK.COLOR)     || 'green';
     isPurchasedCollapsed = localStorage.getItem(SK.COLLAPSED) === 'true';
@@ -143,19 +156,18 @@
 
   function saveLocal() {
     try {
-      localStorage.setItem(SK.CATEGORIES, JSON.stringify(categories));
-      localStorage.setItem(SK.CATALOG,    JSON.stringify(catalog));
-      localStorage.setItem(SK.ITEMS,      JSON.stringify(items));
+      localStorage.setItem(getRoomSK(SK.CATEGORIES), JSON.stringify(categories));
+      localStorage.setItem(getRoomSK(SK.CATALOG),    JSON.stringify(catalog));
+      localStorage.setItem(getRoomSK(SK.ITEMS),      JSON.stringify(items));
+      localStorage.setItem('bev_active_room_v1', activeRoom);
       const ts = Date.now();
-      localStorage.setItem(SK.TS, String(ts));
+      localStorage.setItem(getRoomSK(SK.TS), String(ts));
+      lastPushTs = ts;
       return ts;
     } catch (e) {
       return Date.now();
     }
   }
-
-  let isPushing  = false;
-  let lastPushTs = 0;
 
   function saveState() {
     const ts = saveLocal();
@@ -163,7 +175,7 @@
   }
 
   // =========================================================================
-  // GITHUB GIST REALTIME SYNC (cache buster + gépelés védelem)
+  // GITHUB GIST MULTI-ROOM REALTIME SYNC
   // =========================================================================
   function startGistSync() {
     fetchGist();
@@ -184,16 +196,30 @@
       if (!data || isPushing) return;
       const raw = data.files[GIST_FILE]?.content;
       if (!raw) return;
-      const remote = JSON.parse(raw);
-      const remoteTs = remote.ts || 0;
-      const localTs  = parseInt(localStorage.getItem(SK.TS) || '0', 10);
+      const remoteJson = JSON.parse(raw);
+      
+      let roomData = null;
+      if (remoteJson.rooms && remoteJson.rooms[activeRoom]) {
+        roomData = remoteJson.rooms[activeRoom];
+      } else if (activeRoom === 'otthon') {
+        roomData = {
+          items: remoteJson.items || [],
+          catalog: remoteJson.catalog || [],
+          categories: remoteJson.categories || [],
+          updatedAt: remoteJson.ts || 0
+        };
+      }
 
-      // Szigorú frissítési szabály: csak frissebb remote fogadható el
+      if (!roomData) return;
+
+      const remoteTs = roomData.updatedAt || 0;
+      const localTs  = parseInt(localStorage.getItem(getRoomSK(SK.TS)) || '0', 10);
+
       if (remoteTs > localTs && remoteTs > lastPushTs) {
-        if (remote.items)      items      = remote.items;
-        if (remote.catalog)    catalog    = remote.catalog;
-        if (remote.categories && remote.categories.length > 0)
-          categories = remote.categories;
+        if (roomData.items)      items      = roomData.items;
+        if (roomData.catalog)    catalog    = roomData.catalog;
+        if (roomData.categories && roomData.categories.length > 0)
+          categories = roomData.categories;
         saveLocal();
         sortCats();
         renderColorChips();
@@ -206,17 +232,40 @@
   function pushGist(ts) {
     isPushing = true;
     lastPushTs = ts;
-    const payload = JSON.stringify({ items, catalog, categories, ts });
-    fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      method: 'PATCH',
+
+    fetch(`https://api.github.com/gists/${GIST_ID}?cacheBust=${Date.now()}`, {
       headers: {
         'Authorization': `token ${GIST_TOKEN}`,
-        'Content-Type': 'application/json',
         'User-Agent': 'bevasarlas-app'
-      },
-      body: JSON.stringify({
-        files: { [GIST_FILE]: { content: payload } }
-      })
+      }
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      const raw = data?.files[GIST_FILE]?.content;
+      const remoteJson = raw ? JSON.parse(raw) : {};
+      
+      if (!remoteJson.rooms) remoteJson.rooms = {};
+
+      remoteJson.rooms[activeRoom] = {
+        items,
+        catalog,
+        categories,
+        updatedAt: ts
+      };
+      remoteJson.ts = ts;
+
+      const payload = JSON.stringify(remoteJson);
+      return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `token ${GIST_TOKEN}`,
+          'Content-Type': 'application/json',
+          'User-Agent': 'bevasarlas-app'
+        },
+        body: JSON.stringify({
+          files: { [GIST_FILE]: { content: payload } }
+        })
+      });
     })
     .then(() => {
       setTimeout(() => { isPushing = false; }, 3000);
@@ -699,6 +748,36 @@
     closeCategoriesBtn.addEventListener('click', () => hideModal(categoriesModal));
     saveCategoriesModalBtn.addEventListener('click', saveCategoriesFromModal);
     categoriesModal.addEventListener('click', e => { if (e.target === categoriesModal) hideModal(categoriesModal); });
+
+    // Szoba váltás és Kijelentkezés
+    if (leaveRoomBtn) {
+      leaveRoomBtn.addEventListener('click', () => {
+        localStorage.removeItem('bev_active_room_v1');
+        roomInput.value = '';
+        showModal(roomModal);
+      });
+    }
+
+    if (joinRoomBtn) {
+      joinRoomBtn.addEventListener('click', () => {
+        const inputVal = (roomInput.value.trim() || 'otthon').toLowerCase();
+        activeRoom = inputVal;
+        saveLocal();
+        loadLocal();
+        hideModal(roomModal);
+        fetchGist();
+        renderAll();
+      });
+    }
+
+    if (roomInput) {
+      roomInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (joinRoomBtn) joinRoomBtn.click();
+        }
+      });
+    }
   }
 
   // =========================================================================

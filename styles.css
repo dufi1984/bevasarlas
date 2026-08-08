@@ -882,3 +882,152 @@ body.modal-open {
   font-size: 0.9rem;
   cursor: pointer;
 }
+
+/* App Footer Link (Discreet Kijelentkezés) */
+.app-footer-link {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px 0 12px 0;
+}
+
+.subtle-link-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  opacity: 0.75;
+  transition: var(--transition);
+}
+
+.subtle-link-btn:hover {
+  opacity: 1;
+  color: var(--text-muted);
+}
+
+/* Room Selection Modal */
+.room-modal-card {
+  max-width: 400px;
+}
+
+.room-modal-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.room-input-group {
+  display: flex;
+  gap: 10px;
+}
+
+.room-input-group input {
+  flex: 1;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-main);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.room-input-group input:focus {
+  border-color: var(--accent);
+}
+
+/* Admin Interface */
+.admin-container {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-title h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.google-login-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.google-login-btn:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent);
+}
+
+.admin-rooms-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.room-admin-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+}
+
+.room-admin-info h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.room-admin-info p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.danger-btn {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--danger);
+  color: white;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.danger-btn:hover {
+  opacity: 0.9;
+}

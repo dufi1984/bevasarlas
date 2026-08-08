@@ -121,7 +121,10 @@
             <p class="empty-desc">Még nem vásároltál meg semmit.</p>
           </div>
         </div>
-      </section>
+      <!-- Footer link for room logout (Discreet) -->
+      <footer class="app-footer-link">
+        <button id="leaveRoomBtn" class="subtle-link-btn">Kijelentkezés</button>
+      </footer>
 
     </main>
 
@@ -179,8 +182,34 @@
       </div>
     </div>
 
+    <!-- Room Switcher Modal -->
+    <div id="roomModal" class="modal-overlay hidden">
+      <div class="modal-card room-modal-card">
+        <div class="modal-header">
+          <div class="modal-title">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <h3>Szoba kiválasztása</h3>
+          </div>
+        </div>
+        <div class="room-modal-body">
+          <p class="modal-subtext">Add meg a szoba nevét vagy kódját a csatlakozáshoz (pl. <strong>otthon</strong>):</p>
+          <div class="room-input-group">
+            <input type="text" id="roomInput" placeholder="Szoba neve (pl. otthon)" autocomplete="off">
+            <button id="joinRoomBtn" class="primary-btn">Belépés</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>
