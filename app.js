@@ -62,7 +62,7 @@
   // =========================================================================
   // STATE & ROOM MANAGER
   // =========================================================================
-  let activeRoom           = (localStorage.getItem('bev_active_room_v1') || 'otthon').toLowerCase().trim();
+  let activeRoom           = localStorage.getItem('bev_active_room_v1') ? localStorage.getItem('bev_active_room_v1').toLowerCase().trim() : null;
   let categories           = [];
   let catalog              = [];
   let items                = [];
@@ -76,6 +76,7 @@
   let notifyTimer          = null;  // 10s debounce push értesítéshez
   let notifyChangeCount    = 0;     // hány változás halmozódott fel
   let ownPushEndpoint      = null;  // saját eszköz push subscription endpoint-ja
+  let appStarted           = false; // első initén false, szoba belépés után true
 
   // DOM References
   const $ = id => document.getElementById(id);
@@ -122,14 +123,32 @@
   // =========================================================================
   // INIT
   // =========================================================================
-  function init() {
+
+  // Az alkalmazás teljes elindítása (szoba ismerete után)
+  function startApp() {
+    appStarted = true;
     loadLocal();
-    html.setAttribute('data-theme', theme);
     renderColorChips();
-    setupEvents();
     renderAll();
     startGistSync();
     setupPushNotifications();
+  }
+
+  function init() {
+    // Téma alkalmazva még a szoba előtt
+    theme = localStorage.getItem(SK.THEME) || 'dark';
+    html.setAttribute('data-theme', theme);
+
+    setupEvents();
+
+    if (!activeRoom) {
+      // Első indítás: szoba bekérő ablak megmutatása 'otthon' előtltöltéssel
+      if (roomInput) roomInput.value = 'otthon';
+      if (roomModal) showModal(roomModal);
+    } else {
+      // Már van mentett szoba: azonnal indítjuk az alkalmazást
+      startApp();
+    }
   }
 
   // =========================================================================
@@ -848,11 +867,18 @@
       joinRoomBtn.addEventListener('click', () => {
         const inputVal = (roomInput.value.trim() || 'otthon').toLowerCase();
         activeRoom = inputVal;
-        saveLocal();
-        loadLocal();
+        localStorage.setItem('bev_active_room_v1', activeRoom);
         hideModal(roomModal);
-        fetchGist();
-        renderAll();
+
+        if (!appStarted) {
+          // Első indítás: elindítjuk az egész alkalmazást
+          startApp();
+        } else {
+          // Szoba váltás: csak frissítünk
+          loadLocal();
+          fetchGist();
+          renderAll();
+        }
       });
     }
 
