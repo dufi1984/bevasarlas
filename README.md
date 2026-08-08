@@ -50,8 +50,8 @@ Az alkalmazás teljes működéséhez az alábbi **3 ingyenes külső szolgálta
 
 ## 📱 Használat & Működés
 
-- **Első megnyitás:** A felhasználó megadja a szoba nevét (tetszőleges, nehezen kitalálható szó – pl. egy utcanév, kód stb.).
-- **Átnevezés:** Az admin felületen bármikor átnevezhető egy szoba – az input mezőbe kell írni az új nevet és megnyomni a Mentés gombot. A szobában lévő eszközök automatikusan kijelentkeznek és be kell írni az új nevet.
+- **Első megnyitás:** A felhasználó megadja a tetszőleges szobanevet.
+- **Átnevezés:** Az admin felületen bármikor átnevezhető egy szoba. A szobában lévő eszközök automatikusan átváltanak az új névre.
 - **Értesítések:** Az alkalmazás az első képernyő-érintésre (user gesture) elvégzi a VAPID feliratkozást.
 - **Debounce:** Gyors egymás utáni módosítások esetén 5 másodperc várakozás után csak 1 összefoglaló értesítés megy ki.
 - **Saját eszköz szűrése:** A módosító eszköz automatikusan ki van hagyva az értesítésből, így csak a többi csatlakozott telefon kap notit.
