@@ -220,7 +220,7 @@
     }
 
     function renameRoom(oldName, newName) {
-      if (!confirm(`Biztosan átnevezed a(z) "${oldName}" szobát erre: "${newName}"?\n\nA szobában lévő összes eszköz kijelentkezik és be kell írni az új nevet.`)) return;
+      if (!confirm(`Biztosan átnevezed a(z) "${oldName}" szobát erre: "${newName}"?\n\nA szobában lévő eszközök automatikusan átváltanak az új névre, nem kell semmit átírni.`)) return;
 
       fetch(`https://api.github.com/gists/${GIST_ID}?cacheBust=${Date.now()}`, {
         headers: { 'Authorization': `token ${GIST_TOKEN}`, 'User-Agent': 'bevasarlas-app' }
@@ -239,6 +239,19 @@
         // Adatok átmásolása az új névvel, régi törlése
         json.rooms[newName] = { ...json.rooms[oldName] };
         delete json.rooms[oldName];
+
+        // Redirect bejegyzés mentése: oldName → newName
+        if (!json.renamedRooms) json.renamedRooms = {};
+        json.renamedRooms[oldName] = newName;
+
+        // Láncos átnevezés kezelése: ha bármely korábbi redirect az oldName-re mutat,
+        // frissítjük newName-re, hogy ne kelljen láncolni (A→B→C helyett A→C)
+        Object.keys(json.renamedRooms).forEach(key => {
+          if (key !== oldName && json.renamedRooms[key] === oldName) {
+            json.renamedRooms[key] = newName;
+          }
+        });
+
         json.ts = Date.now();
 
         return fetch(`https://api.github.com/gists/${GIST_ID}`, {
@@ -249,7 +262,7 @@
       })
       .then(res => {
         if (!res) return;
-        alert(`✅ Átnevezve: "${oldName}" → "${newName}"\n\nA szobában lévő eszközök automatikusan kijelentkeznek.`);
+        alert(`✅ Átnevezve: "${oldName}" → "${newName}"\n\nA szobában lévő eszközök automatikusan átváltanak – nincs tennivaló.`);
         loadRooms();
       })
       .catch(err => {
