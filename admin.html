@@ -59,6 +59,16 @@
 
   <script>
     // Firebase Config (Restricted to tamas.duffek@gmail.com for Admin operations)
+    const firebaseConfig = {
+      apiKey: "AIzaSyCzyG3OEQUJ2jjIi-vSSBCnYB7M1317glY",
+      authDomain: "bevasarlas-lista.firebaseapp.com",
+      projectId: "bevasarlas-lista",
+      storageBucket: "bevasarlas-lista.firebasestorage.app",
+      messagingSenderId: "1095241652880",
+      appId: "1:1095241652880:web:45b2dbceeb6c36b2afd615"
+    };
+    firebase.initializeApp(firebaseConfig);
+
     const ALLOWED_ADMINS = ['tamas.duffek@gmail.com'];
     
     // Gist fallback ID and token for standalone mode
