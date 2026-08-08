@@ -162,14 +162,34 @@
 
         const card = document.createElement('div');
         card.className = 'room-admin-card';
+        card.dataset.room = roomName;
         card.innerHTML = `
-          <div class="room-admin-info">
-            <h3>${esc(roomName)}</h3>
-            <p style="margin-top:4px; font-size:0.85rem; color:var(--text-muted);">Értesített eszközök: <strong>${subsCount} db</strong></p>
-            <p style="margin-top:4px; font-size:0.8rem; color:var(--text-muted);">Utolsó aktivitás: ${updatedAt}</p>
+          <div class="room-admin-info" style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <input
+                type="text"
+                class="room-rename-input"
+                value="${esc(roomName)}"
+                data-original="${esc(roomName)}"
+                maxlength="40"
+                spellcheck="false"
+                style="flex:1; min-width:0; background:var(--surface-2,#1e2030); border:1px solid var(--border,#2d3148); border-radius:8px; color:var(--text-primary,#e2e8f0); font-size:1rem; font-weight:600; padding:6px 10px; font-family:inherit;"
+              >
+              <button
+                class="rename-btn secondary-btn"
+                title="Szoba átnevezése"
+                data-room="${esc(roomName)}"
+                style="padding:6px 10px; font-size:0.82rem; white-space:nowrap; display:inline-flex; align-items:center; gap:5px;"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Mentés
+              </button>
+            </div>
+            <p style="font-size:0.85rem; color:var(--text-muted);">Értesített eszközök: <strong>${subsCount} db</strong></p>
+            <p style="margin-top:2px; font-size:0.8rem; color:var(--text-muted);">Utolsó aktivitás: ${updatedAt}</p>
           </div>
-          <div>
-            <button class="danger-btn" onclick="deleteRoom('${esc(roomName)}')" style="display:inline-flex; align-items:center; gap:6px;">
+          <div style="margin-left:12px; flex-shrink:0;">
+            <button class="danger-btn" data-delete="${esc(roomName)}" style="display:inline-flex; align-items:center; gap:6px;">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" fill="currentColor">
                 <path d="M400 112H112a16 16 0 0 1 0-32h80V48a32 32 0 0 1 32-32h64a32 32 0 0 1 32 32v32h80a16 16 0 0 1 0 32zM192 48v32h128V48z"/>
                 <path d="M128 144l21.3 320a32 32 0 0 0 32 29.9h149.4a32 32 0 0 0 32-29.9L384 144H128zm80 288a16 16 0 0 1-32 0V208a16 16 0 0 1 32 0v224zm80 0a16 16 0 0 1-32 0V208a16 16 0 0 1 32 0v224zm80 0a16 16 0 0 1-32 0V208a16 16 0 0 1 32 0v224z"/>
@@ -178,7 +198,62 @@
             </button>
           </div>
         `;
+
+        // Átnevezés gomb eseménykezelő
+        card.querySelector('.rename-btn').addEventListener('click', () => {
+          const input = card.querySelector('.room-rename-input');
+          const oldName = input.dataset.original;
+          const newName = input.value.trim().toLowerCase().replace(/\s+/g, '');
+          if (!newName) { alert('A szoba neve nem lehet üres!'); input.value = oldName; return; }
+          if (newName === oldName) { alert('A szoba neve nem változott.'); return; }
+          if (!/^[a-z0-9_\-áéíóöőúüű]+$/i.test(newName)) { alert('A szoba neve csak betűket, számokat és kötőjelet tartalmazhat!'); return; }
+          renameRoom(oldName, newName);
+        });
+
+        // Törlés gomb eseménykezelő
+        card.querySelector('.danger-btn').addEventListener('click', () => {
+          deleteRoom(card.querySelector('.danger-btn').dataset.delete);
+        });
+
         roomsGrid.appendChild(card);
+      });
+    }
+
+    function renameRoom(oldName, newName) {
+      if (!confirm(`Biztosan átnevezed a(z) "${oldName}" szobát erre: "${newName}"?\n\nA szobában lévő összes eszköz kijelentkezik és be kell írni az új nevet.`)) return;
+
+      fetch(`https://api.github.com/gists/${GIST_ID}?cacheBust=${Date.now()}`, {
+        headers: { 'Authorization': `token ${GIST_TOKEN}`, 'User-Agent': 'bevasarlas-app' }
+      })
+      .then(r => r.json())
+      .then(data => {
+        const raw = data.files['bevasarlas.json']?.content;
+        const json = raw ? JSON.parse(raw) : {};
+        if (!json.rooms) json.rooms = {};
+
+        if (json.rooms[newName]) {
+          alert(`A(z) "${newName}" szoba már létezik! Válassz másik nevet.`);
+          return Promise.reject('exists');
+        }
+
+        // Adatok átmásolása az új névvel, régi törlése
+        json.rooms[newName] = { ...json.rooms[oldName] };
+        delete json.rooms[oldName];
+        json.ts = Date.now();
+
+        return fetch(`https://api.github.com/gists/${GIST_ID}`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `token ${GIST_TOKEN}`, 'Content-Type': 'application/json', 'User-Agent': 'bevasarlas-app' },
+          body: JSON.stringify({ files: { 'bevasarlas.json': { content: JSON.stringify(json) } } })
+        });
+      })
+      .then(res => {
+        if (!res) return;
+        alert(`✅ Átnevezve: "${oldName}" → "${newName}"\n\nA szobában lévő eszközök automatikusan kijelentkeznek.`);
+        loadRooms();
+      })
+      .catch(err => {
+        if (err !== 'exists') alert('Hiba az átnevezés során: ' + err.message);
       });
     }
 
@@ -186,32 +261,21 @@
       if (!confirm(`Biztosan törölni szeretnéd a(z) "${roomName}" nevű szobát és annak összes adatát?`)) return;
 
       fetch(`https://api.github.com/gists/${GIST_ID}?cacheBust=${Date.now()}`, {
-        headers: {
-          'Authorization': `token ${GIST_TOKEN}`,
-          'User-Agent': 'bevasarlas-app'
-        }
+        headers: { 'Authorization': `token ${GIST_TOKEN}`, 'User-Agent': 'bevasarlas-app' }
       })
       .then(r => r.json())
       .then(data => {
         const raw = data.files['bevasarlas.json']?.content;
         const json = raw ? JSON.parse(raw) : {};
         if (!json.rooms) json.rooms = {};
-        
+
         delete json.rooms[roomName];
         json.ts = Date.now();
 
-        const patchBody = JSON.stringify({
-          files: { 'bevasarlas.json': { content: JSON.stringify(json) } }
-        });
-
         return fetch(`https://api.github.com/gists/${GIST_ID}`, {
           method: 'PATCH',
-          headers: {
-            'Authorization': `token ${GIST_TOKEN}`,
-            'Content-Type': 'application/json',
-            'User-Agent': 'bevasarlas-app'
-          },
-          body: patchBody
+          headers: { 'Authorization': `token ${GIST_TOKEN}`, 'Content-Type': 'application/json', 'User-Agent': 'bevasarlas-app' },
+          body: JSON.stringify({ files: { 'bevasarlas.json': { content: JSON.stringify(json) } } })
         });
       })
       .then(() => {
@@ -229,3 +293,4 @@
   </script>
 </body>
 </html>
+
