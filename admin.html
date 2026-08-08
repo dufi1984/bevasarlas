@@ -172,9 +172,8 @@
         card.className = 'room-admin-card';
         card.innerHTML = `
           <div class="room-admin-info">
-            <h3>🏠 ${esc(roomName)} ${roomName === 'otthon' ? '(Alapértelmezett)' : ''}</h3>
-            <p>Tételek a listán: <strong>${items.length} db</strong> | Könyvtár: <strong>${catalog.length} db</strong></p>
-            <p style="margin-top:2px; font-size:0.75rem;">Utolsó aktivitás: ${updatedAt}</p>
+            <h3>🏠 ${esc(roomName)}</h3>
+            <p style="margin-top:4px; font-size:0.8rem; color:var(--text-muted);">Utolsó aktivitás: ${updatedAt}</p>
           </div>
           <div>
             <button class="danger-btn" onclick="deleteRoom('${esc(roomName)}')">🗑️ Szoba törlése</button>
