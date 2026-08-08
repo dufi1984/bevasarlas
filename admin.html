@@ -136,20 +136,13 @@
       .then(r => r.json())
       .then(data => {
         const raw = data.files['bevasarlas.json']?.content;
-        const rooms = { ...(json.rooms || {}) };
-        if (!rooms['otthon']) {
-          rooms['otthon'] = {
-            items: json.items || [],
-            catalog: json.catalog || [],
-            updatedAt: json.ts || Date.now()
-          };
-        }
+        const json = raw ? JSON.parse(raw) : {};
+        const rooms = json.rooms || {};
         
         renderRoomsList(rooms);
       })
       .catch(() => {
-        // Fallback default 'otthon' room
-        renderRoomsList({ 'otthon': { items: [], catalog: [], updatedAt: Date.now() } });
+        renderRoomsList({});
       });
     }
 
@@ -164,20 +157,25 @@
 
       roomKeys.forEach(roomName => {
         const roomData = rooms[roomName] || {};
-        const items = roomData.items || [];
-        const catalog = roomData.catalog || [];
         const updatedAt = roomData.updatedAt ? new Date(roomData.updatedAt).toLocaleString('hu-HU') : 'Nem ismert';
-
         const subsCount = (roomData.subscriptions || []).length;
+
         const card = document.createElement('div');
         card.className = 'room-admin-card';
         card.innerHTML = `
           <div class="room-admin-info">
-            <h3>🏠 ${esc(roomName)}</h3>
-            <p style="margin-top:4px; font-size:0.8rem; color:var(--text-muted);">📱 Értesített eszközök: <strong>${subsCount} db</strong> | Utolsó aktivitás: ${updatedAt}</p>
+            <h3>${esc(roomName)}</h3>
+            <p style="margin-top:4px; font-size:0.85rem; color:var(--text-muted);">Értesített eszközök: <strong>${subsCount} db</strong></p>
+            <p style="margin-top:4px; font-size:0.8rem; color:var(--text-muted);">Utolsó aktivitás: ${updatedAt}</p>
           </div>
           <div>
-            <button class="danger-btn" onclick="deleteRoom('${esc(roomName)}')">🗑️ Szoba törlése</button>
+            <button class="danger-btn" onclick="deleteRoom('${esc(roomName)}')" style="display:inline-flex; align-items:center; gap:6px;">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="16" height="16" fill="currentColor">
+                <path d="M400 112H112a16 16 0 0 1 0-32h80V48a32 32 0 0 1 32-32h64a32 32 0 0 1 32 32v32h80a16 16 0 0 1 0 32zM192 48v32h128V48z"/>
+                <path d="M128 144l21.3 320a32 32 0 0 0 32 29.9h149.4a32 32 0 0 0 32-29.9L384 144H128zm80 288a16 16 0 0 1-32 0V208a16 16 0 0 1 32 0v224zm80 0a16 16 0 0 1-32 0V208a16 16 0 0 1 32 0v224zm80 0a16 16 0 0 1-32 0V208a16 16 0 0 1 32 0v224z"/>
+              </svg>
+              Szoba törlése
+            </button>
           </div>
         `;
         roomsGrid.appendChild(card);
