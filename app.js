@@ -168,9 +168,11 @@
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.ready;
+      // Először regisztráljuk a Service Worker-t kifejezetten
+      const reg = await navigator.serviceWorker.register('./sw.js?v=18');
+      await navigator.serviceWorker.ready;
 
-      // Tájékoztatsd a SW-t az aktív szobáról
+      // Tájékoztasd a SW-t az aktív szobáról
       if (reg.active) {
         reg.active.postMessage({ type: 'SET_ROOM', room: activeRoom });
       }
@@ -195,7 +197,7 @@
       }).catch(() => {});
 
     } catch (e) {
-      // Push engedélyezés sikertelen (pl. Safari privát mód) – csendben figyelmen kívül hagyjuk
+      // Push engedélyezés sikertelen – csendben figyelmen kívül hagyjuk
     }
   }
 
