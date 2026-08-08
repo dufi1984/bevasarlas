@@ -75,6 +75,7 @@
   let lastPushTs           = 0;
   let notifyTimer          = null;  // 10s debounce push értesítéshez
   let notifyChangeCount    = 0;     // hány változás halmozódott fel
+  let ownPushEndpoint      = null;  // saját eszköz push subscription endpoint-ja
 
   // DOM References
   const $ = id => document.getElementById(id);
@@ -150,7 +151,7 @@
 
       const reg = await navigator.serviceWorker.ready;
 
-      // Tájékoztasd a SW-t az aktív szobáról
+      // Tájékoztatsd a SW-t az aktív szobáról
       if (reg.active) {
         reg.active.postMessage({ type: 'SET_ROOM', room: activeRoom });
       }
@@ -164,6 +165,9 @@
         });
       }
 
+      // Saját endpoint mentve – ez alapján a Worker kihagyja ezt az eszközt a push-ból
+      ownPushEndpoint = subscription.endpoint;
+
       // Subscription tárolása a Cloudflare Worker-en keresztül a Gist-be
       await fetch(`${WORKER_URL}/subscribe`, {
         method: 'POST',
@@ -175,6 +179,7 @@
       // Push engedélyezés sikertelen (pl. Safari privát mód) – csendben figyelmen kívül hagyjuk
     }
   }
+
 
   // 10 másodperces debounce: ha több módosítás történik egymás után, csak egyszer küld értesítést
   function schedulePushNotify(changeLabel) {
@@ -192,7 +197,8 @@
         await fetch(`${WORKER_URL}/notify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ room: activeRoom, message })
+          // senderEndpoint: a Worker ezt az eszközt kihagyja a küldésből
+          body: JSON.stringify({ room: activeRoom, message, senderEndpoint: ownPushEndpoint })
         });
       } catch (e) {
         // Hálózati hiba – csendben figyelmen kívül hagyjuk
