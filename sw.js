@@ -1,5 +1,6 @@
 // Service Worker for Bevásárló Lista PWA & Web Push Notifications
-const CACHE_NAME = 'bevasarlas-pwa-v1';
+const CACHE_NAME = 'bevasarlas-pwa-v2';
+const WORKER_URL = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
 const ASSETS = [
   './',
   './index.html',
@@ -11,6 +12,9 @@ const ASSETS = [
   './icon-512.png'
 ];
 
+// Current room (updated via postMessage from app.js)
+let currentRoom = 'otthon';
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
@@ -20,11 +24,9 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
-      );
-    })
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
@@ -43,44 +45,48 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Push notification listener
-self.addEventListener('push', event => {
-  let data = { title: 'Bevásárló lista', body: 'Új tétel érkezett a listára!' };
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data.body = event.data.text();
-    }
+// Message from app.js: update current room
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SET_ROOM') {
+    currentRoom = event.data.room || 'otthon';
   }
+});
 
-  const options = {
-    body: data.body || 'Új tétel frissült a listádon!',
-    icon: './icon-192.png',
-    badge: './icon-192.png',
-    vibrate: [100, 50, 100],
-    data: { url: data.url || './' }
-  };
+// Push notification received
+self.addEventListener('push', event => {
+  const room = currentRoom || 'otthon';
 
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Bevásárló lista', options)
+    fetch(`${WORKER_URL}/notification?room=${encodeURIComponent(room)}`)
+      .then(r => r.ok ? r.json() : { message: 'A lista frissült!' })
+      .then(data => {
+        const message = data.message || 'A lista frissült!';
+        return self.registration.showNotification('🛒 Bevásárló lista', {
+          body: message,
+          icon: './icon-192.png',
+          badge: './icon-192.png',
+          vibrate: [100, 50, 100],
+          data: { url: './' }
+        });
+      })
+      .catch(() =>
+        self.registration.showNotification('🛒 Bevásárló lista', {
+          body: 'A lista frissült!',
+          icon: './icon-192.png'
+        })
+      )
   );
 });
 
+// Notification click: open the app
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const urlToOpen = event.notification.data?.url || './';
-
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
       for (const client of clientList) {
-        if (client.url.includes(urlToOpen) && 'focus' in client) {
-          return client.focus();
-        }
+        if ('focus' in client) return client.focus();
       }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
+      if (clients.openWindow) return clients.openWindow('./');
     })
   );
 });

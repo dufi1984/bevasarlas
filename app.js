@@ -13,6 +13,11 @@
   const GIST_FILE  = 'bevasarlas.json';
   const POLL_MS    = 4000;
 
+  // Push értesítések
+  const WORKER_URL      = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
+  const VAPID_PUBLIC_KEY = 'BPYMM3cjcVvoTir84pHOEXMnDbuk8nVgtelRIUapdnaYBTv7vJ7b8nKSlLFPSuFymGU1euGx3zyxi4DO-jymrNI';
+  const NOTIFY_DELAY_MS  = 10000; // 10 másodperces debounce
+
   // =========================================================================
   // LOCAL STORAGE KEYS
   // =========================================================================
@@ -68,6 +73,8 @@
   let typingTimer          = null;
   let isPushing            = false;
   let lastPushTs           = 0;
+  let notifyTimer          = null;  // 10s debounce push értesítéshez
+  let notifyChangeCount    = 0;     // hány változás halmozódott fel
 
   // DOM References
   const $ = id => document.getElementById(id);
@@ -121,10 +128,76 @@
     setupEvents();
     renderAll();
     startGistSync();
+    setupPushNotifications();
+  }
 
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
+  // =========================================================================
+  // PUSH ÉRTESÍTÉSEK SETUP (VAPID + Cloudflare Worker)
+  // =========================================================================
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  }
+
+  async function setupPushNotifications() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+
+      const reg = await navigator.serviceWorker.ready;
+
+      // Tájékoztasd a SW-t az aktív szobáról
+      if (reg.active) {
+        reg.active.postMessage({ type: 'SET_ROOM', room: activeRoom });
+      }
+
+      // Meglévő subscription ellenőrzése vagy új létrehozása
+      let subscription = await reg.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+      }
+
+      // Subscription tárolása a Cloudflare Worker-en keresztül a Gist-be
+      await fetch(`${WORKER_URL}/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room: activeRoom, subscription: subscription.toJSON() })
+      }).catch(() => {});
+
+    } catch (e) {
+      // Push engedélyezés sikertelen (pl. Safari privát mód) – csendben figyelmen kívül hagyjuk
     }
+  }
+
+  // 10 másodperces debounce: ha több módosítás történik egymás után, csak egyszer küld értesítést
+  function schedulePushNotify(changeLabel) {
+    notifyChangeCount++;
+    clearTimeout(notifyTimer);
+    notifyTimer = setTimeout(async () => {
+      const count = notifyChangeCount;
+      notifyChangeCount = 0;
+
+      const message = count === 1
+        ? `${changeLabel} – ${activeRoom} lista`
+        : `${count} módosítás az ${activeRoom} listán`;
+
+      try {
+        await fetch(`${WORKER_URL}/notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ room: activeRoom, message })
+        });
+      } catch (e) {
+        // Hálózati hiba – csendben figyelmen kívül hagyjuk
+      }
+    }, NOTIFY_DELAY_MS);
   }
 
   // =========================================================================
@@ -337,6 +410,7 @@
     }
 
     saveState();
+    schedulePushNotify(`🛒 Hozzáadva: ${trimmed}`);
     renderAll();
     searchInput.value = '';
     hideAC();
@@ -347,7 +421,12 @@
 
   function toggleChecked(id) {
     const item = items.find(i => i.id === id);
-    if (item) { item.checked = !item.checked; saveState(); renderAll(); }
+    if (item) {
+      item.checked = !item.checked;
+      saveState();
+      schedulePushNotify(item.checked ? `✅ Megvásárolva: ${item.name}` : `🔄 Visszahelyezve: ${item.name}`);
+      renderAll();
+    }
   }
 
   function deleteItem(id) {
@@ -357,6 +436,7 @@
     }
     items = items.filter(i => i.id !== id);
     saveState();
+    if (target) schedulePushNotify(`🗑️ Törölve: ${target.name}`);
     renderAll();
   }
 
