@@ -301,6 +301,7 @@
       if (remoteJson.rooms && remoteJson.rooms[activeRoom]) {
         roomData = remoteJson.rooms[activeRoom];
       } else if (activeRoom === 'otthon') {
+        // Backward compatibility: adatok a gyökér szinten
         roomData = {
           items: remoteJson.items || [],
           catalog: remoteJson.catalog || [],
@@ -309,7 +310,28 @@
         };
       }
 
-      if (!roomData) return;
+      if (!roomData) {
+        // A szoba nem létezik a remote adatbázisban.
+        // Ha lokálisan volt már mentett adat (timestamp > 0), az admin törölte a szobát.
+        const localTs = parseInt(localStorage.getItem(getRoomSK(SK.TS)) || '0', 10);
+        if (localTs > 0) {
+          // Töröljük a szoba összes lokális adatát
+          [SK.ITEMS, SK.CATALOG, SK.CATEGORIES, SK.TS].forEach(key => {
+            localStorage.removeItem(getRoomSK(key));
+          });
+          // Alapértelmezett állapot visszaállítása
+          items = [];
+          catalog = [];
+          categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+          // Kijelentkeztetjük a szobából és visszadobjuk a szobakérőre
+          localStorage.removeItem('bev_active_room_v1');
+          activeRoom = null;
+          appStarted = false;
+          if (roomInput) roomInput.value = '';
+          if (roomModal) showModal(roomModal);
+        }
+        return;
+      }
 
       const remoteTs = roomData.updatedAt || 0;
       const localTs  = parseInt(localStorage.getItem(getRoomSK(SK.TS)) || '0', 10);
