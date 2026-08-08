@@ -345,7 +345,9 @@
       
       if (!remoteJson.rooms) remoteJson.rooms = {};
 
+      const existingRoom = remoteJson.rooms[activeRoom] || {};
       remoteJson.rooms[activeRoom] = {
+        ...existingRoom,
         items,
         catalog,
         categories,
