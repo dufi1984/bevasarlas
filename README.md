@@ -28,7 +28,7 @@ Az alkalmazás teljes működéséhez az alábbi **3 ingyenes külső szolgálta
 
 ### 3. Firebase Console (Admin Auth)
 - **Fiók:** [console.firebase.google.com](https://console.firebase.google.com)
-- **Feladat:** **Firebase Authentication (Google Sign-In)** az `admin.html` felület levédéséhez. Kizárólag a megadott admin email cím (`tamas.duffek@gmail.com`) léphet be a szobák ellenőrzéséhez és törléséhez.
+- **Feladat:** **Firebase Authentication (Google Sign-In)** az `admin.html` felület levédéséhez. Kizárólag a megadott admin (saját) email címmel léphet be a szobák ellenőrzéséhez és törléséhez.
 
 ---
 
@@ -51,7 +51,7 @@ Az alkalmazás teljes működéséhez az alábbi **3 ingyenes külső szolgálta
 ## 📱 Használat & Működés
 
 - **Első megnyitás:** A felhasználó megadja a tetszőleges szobanevet.
-- **Átnevezés:** Az admin felületen bármikor átnevezhető egy szoba. A szobában lévő eszközök automatikusan átváltanak az új névre.
+- **Átnevezés:** Az admin felületen bármikor átnevezhető egy szoba. Az adott szobában lévő eszközök automatikusan átváltanak az új nevű szobába a háttérben.
 - **Értesítések:** Az alkalmazás az első képernyő-érintésre (user gesture) elvégzi a VAPID feliratkozást.
 - **Debounce:** Gyors egymás utáni módosítások esetén 5 másodperc várakozás után csak 1 összefoglaló értesítés megy ki.
-- **Saját eszköz szűrése:** A módosító eszköz automatikusan ki van hagyva az értesítésből, így csak a többi csatlakozott telefon kap notit.
+- **Saját eszköz szűrése:** A módosító eszköz automatikusan ki van hagyva az értesítésből, így csak a többi csatlakozott eszköz kap értesítést.
