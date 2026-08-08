@@ -85,24 +85,17 @@
 
     let currentUser = null;
 
-    // Bejelentkezés Google-lal (redirect alapú – mobilon és GitHub Pages-en megbízható)
+    // Bejelentkezés Google-lal (signInWithPopup – GitHub Pages-en ez működik megbízhatóan)
     googleLoginBtn.addEventListener('click', () => {
       const provider = new firebase.auth.GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      firebase.auth().signInWithRedirect(provider).catch(err => {
-        alert('Hiba: ' + err.message);
+      firebase.auth().signInWithPopup(provider).catch(err => {
+        alert('Bejelentkezési hiba: ' + err.message);
       });
     });
 
     googleLogoutBtn.addEventListener('click', () => {
       firebase.auth().signOut();
-    });
-
-    // Redirect visszatérés kezelése
-    firebase.auth().getRedirectResult().catch(err => {
-      if (err.code !== 'auth/no-auth-event') {
-        alert('Bejelentkezési hiba: ' + err.message);
-      }
     });
 
     firebase.auth().onAuthStateChanged(user => {
