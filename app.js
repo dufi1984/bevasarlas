@@ -142,8 +142,8 @@
     setupEvents();
 
     if (!activeRoom) {
-      // Első indítás: szoba bekérő ablak megmutatása 'otthon' előtltöltéssel
-      if (roomInput) roomInput.value = 'otthon';
+      // Első indítás: szoba bekérő ablak megmutatása
+      if (roomInput) roomInput.value = '';
       if (roomModal) showModal(roomModal);
     } else {
       // Már van mentett szoba: azonnal indítjuk az alkalmazást
