@@ -168,12 +168,13 @@
         const catalog = roomData.catalog || [];
         const updatedAt = roomData.updatedAt ? new Date(roomData.updatedAt).toLocaleString('hu-HU') : 'Nem ismert';
 
+        const subsCount = (roomData.subscriptions || []).length;
         const card = document.createElement('div');
         card.className = 'room-admin-card';
         card.innerHTML = `
           <div class="room-admin-info">
             <h3>🏠 ${esc(roomName)}</h3>
-            <p style="margin-top:4px; font-size:0.8rem; color:var(--text-muted);">Utolsó aktivitás: ${updatedAt}</p>
+            <p style="margin-top:4px; font-size:0.8rem; color:var(--text-muted);">📱 Értesített eszközök: <strong>${subsCount} db</strong> | Utolsó aktivitás: ${updatedAt}</p>
           </div>
           <div>
             <button class="danger-btn" onclick="deleteRoom('${esc(roomName)}')">🗑️ Szoba törlése</button>
