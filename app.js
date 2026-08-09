@@ -176,7 +176,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=23');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=24');
       await navigator.serviceWorker.ready;
 
       if (reg.active) {
@@ -982,9 +982,10 @@
     saveCategoriesModalBtn.addEventListener('click', saveCategoriesFromModal);
     categoriesModal.addEventListener('click', e => { if (e.target === categoriesModal) hideModal(categoriesModal); });
 
-    // Szoba váltás és Kijelentkezés
+    // Szoba váltás és Kilépés
     if (leaveRoomBtn) {
       leaveRoomBtn.addEventListener('click', () => {
+        closeSettingsDropdown();
         localStorage.removeItem('bev_active_room_v1');
         roomInput.value = '';
         showModal(roomModal);

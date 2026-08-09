@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=23">
+  <link rel="stylesheet" href="styles.css?v=24">
 </head>
 <body>
   <div class="app-container">
@@ -75,6 +75,11 @@
                   <path d="m21 21-1.5-1.5"/>
                 </svg>
                 <span>Kategóriák</span>
+              </button>
+              <div class="dropdown-divider"></div>
+              <button id="leaveRoomBtn" class="dropdown-item dropdown-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                <span>Kilépés</span>
               </button>
             </div>
           </div>
@@ -146,12 +151,7 @@
             <p class="empty-desc">Még nem vásároltál meg semmit.</p>
           </div>
         </div>
-      <!-- Footer link for room logout (Discreet) -->
-      <footer class="app-footer-link">
-        <button id="leaveRoomBtn" class="subtle-link-btn">Kijelentkezés</button>
-      </footer>
-
-    </main>
+      </section>
 
     <!-- Master Catalog Modal -->
     <div id="catalogModal" class="modal-overlay hidden">
@@ -228,7 +228,7 @@
 
   </div>
 
-  <script src="app.js?v=23"></script>
+  <script src="app.js?v=24"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
