@@ -1,4 +1,4 @@
-# 🛒 Bevásárló Lista PWA (Valós Idejű Multi-Room & Web Push Értesítések)
+# Bevásárló Lista PWA (Valós Idejű Multi-Room & Web Push Értesítések)
 
 Mobilra optimalizált, GitHub Gist alapon működő valós idejű bevásárlólista alkalmazás. Támogatja a független szobákat, PWA offline módot, VAPID Push értesítéseket és Google Auth alapú adminisztrációs felületet.
 
@@ -44,7 +44,7 @@ Az alkalmazás teljes működéséhez az alábbi **3 ingyenes külső szolgálta
 ### B) Firebase Auth Beállítása (Admin felület)
 1. Hozz létre egy `bevasarlas-lista` nevű projektet a [console.firebase.google.com](https://console.firebase.google.com) oldalon.
 2. Kapcsold be a **Google Sign-In** szolgáltatást (*Authentication → Sign-in method → Google → Enable*).
-3. Az **Authentication → Settings → Authorized domains** alatt add hozzá a domain-edet (pl. `dufi1984.github.io`).
+3. Az **Authentication → Settings → Authorized domains** alatt add hozzá a domain-edet (pl. `user-name.github.io`).
 
 ---
 
@@ -53,5 +53,5 @@ Az alkalmazás teljes működéséhez az alábbi **3 ingyenes külső szolgálta
 - **Első megnyitás:** A felhasználó megadja a tetszőleges szobanevet.
 - **Átnevezés:** Az admin felületen bármikor átnevezhető egy szoba. Az adott szobában lévő eszközök automatikusan átváltanak az új nevű szobába a háttérben.
 - **Értesítések:** Az alkalmazás az első képernyő-érintésre (user gesture) elvégzi a VAPID feliratkozást.
-- **Debounce:** Gyors egymás utáni módosítások esetén 5 másodperc várakozás után csak 1 összefoglaló értesítés megy ki.
+- **Debounce:** Gyors egymás utáni módosítások esetén 12 másodperc várakozás után csak 1 összefoglaló értesítés megy ki.
 - **Saját eszköz szűrése:** A módosító eszköz automatikusan ki van hagyva az értesítésből, így csak a többi csatlakozott eszköz kap értesítést.
