@@ -176,7 +176,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=22');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=23');
       await navigator.serviceWorker.ready;
 
       if (reg.active) {
@@ -750,6 +750,12 @@
         <span class="category-dot" style="background-color:${cat.color}"></span>
         <input type="text" data-id="${cat.id}" value="${esc(cat.name)}" placeholder="Kategória neve...">`;
 
+      const clearCategoryDragIndicators = () => {
+        categoriesEditList.querySelectorAll('.category-edit-row').forEach(r => {
+          r.classList.remove('drag-above', 'drag-below', 'drag-over');
+        });
+      };
+
       // HTML5 Drag
       row.addEventListener('dragstart', e => {
         modalDragFromId = cat.id;
@@ -759,18 +765,31 @@
       row.addEventListener('dragend', () => {
         modalDragFromId = null;
         row.classList.remove('dragging');
-        categoriesEditList.querySelectorAll('.category-edit-row').forEach(r => r.classList.remove('drag-over'));
+        clearCategoryDragIndicators();
       });
       row.addEventListener('dragover', e => {
         e.preventDefault();
-        if (modalDragFromId && modalDragFromId !== cat.id) row.classList.add('drag-over');
+        if (!modalDragFromId || modalDragFromId === cat.id) return;
+        const rect = row.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const isAbove = e.clientY < midY;
+
+        clearCategoryDragIndicators();
+        if (isAbove) {
+          row.classList.add('drag-above');
+        } else {
+          row.classList.add('drag-below');
+        }
       });
-      row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+      row.addEventListener('dragleave', () => {
+        row.classList.remove('drag-above', 'drag-below');
+      });
       row.addEventListener('drop', e => {
         e.preventDefault();
-        row.classList.remove('drag-over');
+        const isAbove = row.classList.contains('drag-above');
+        clearCategoryDragIndicators();
         if (modalDragFromId && modalDragFromId !== cat.id) {
-          reorderModalCategories(modalDragFromId, cat.id);
+          reorderModalCategories(modalDragFromId, cat.id, isAbove ? 'above' : 'below');
         }
       });
 
@@ -785,35 +804,50 @@
         if (!modalDragFromId) return;
         const touch = e.touches[0];
         const below = document.elementFromPoint(touch.clientX, touch.clientY);
-        categoriesEditList.querySelectorAll('.category-edit-row').forEach(r => r.classList.remove('drag-over'));
         const targetRow = below && below.closest('.category-edit-row');
-        if (targetRow && targetRow.dataset.id !== modalDragFromId) targetRow.classList.add('drag-over');
+
+        clearCategoryDragIndicators();
+
+        if (targetRow && targetRow.dataset.id !== modalDragFromId) {
+          const rect = targetRow.getBoundingClientRect();
+          const midY = rect.top + rect.height / 2;
+          if (touch.clientY < midY) {
+            targetRow.classList.add('drag-above');
+          } else {
+            targetRow.classList.add('drag-below');
+          }
+        }
       }, { passive: true });
 
-      handle.addEventListener('touchend', e => {
+      handle.addEventListener('touchend', () => {
         if (!modalDragFromId) return;
         row.classList.remove('dragging');
         const fromId = modalDragFromId;
         modalDragFromId = null;
-        const touch = e.changedTouches[0];
-        const below = document.elementFromPoint(touch.clientX, touch.clientY);
-        const targetRow = below && below.closest('.category-edit-row');
-        if (targetRow && targetRow.dataset.id && targetRow.dataset.id !== fromId) {
-          reorderModalCategories(fromId, targetRow.dataset.id);
+
+        const activeTarget = categoriesEditList.querySelector('.drag-above, .drag-below');
+        if (activeTarget && activeTarget.dataset.id && activeTarget.dataset.id !== fromId) {
+          const isAbove = activeTarget.classList.contains('drag-above');
+          reorderModalCategories(fromId, activeTarget.dataset.id, isAbove ? 'above' : 'below');
         }
-        categoriesEditList.querySelectorAll('.category-edit-row').forEach(r => r.classList.remove('drag-over'));
+
+        clearCategoryDragIndicators();
       });
 
       categoriesEditList.appendChild(row);
     });
   }
 
-  function reorderModalCategories(fromId, toId) {
+  function reorderModalCategories(fromId, toId, position = 'above') {
     const fi = categories.findIndex(c => c.id === fromId);
-    const ti = categories.findIndex(c => c.id === toId);
+    let ti = categories.findIndex(c => c.id === toId);
     if (fi === -1 || ti === -1) return;
+
     const [moved] = categories.splice(fi, 1);
-    categories.splice(ti, 0, moved);
+    const newTi = categories.findIndex(c => c.id === toId);
+    const insertIndex = position === 'below' ? newTi + 1 : newTi;
+
+    categories.splice(insertIndex, 0, moved);
     categories.forEach((c, i) => c.order = i);
     renderCategoriesModal();
   }
