@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="styles.css?v=20">
+  <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
   <div class="app-container">
@@ -36,22 +36,43 @@
             <h1>Bevásárló lista</h1>
           </div>
           <div class="header-actions">
-            <button id="manageCategoriesBtn" class="icon-btn" title="Kategóriák kezelése" aria-label="Kategóriák">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="2" width="8" height="8" rx="2"/>
-                <rect x="14" y="2" width="8" height="8" rx="2"/>
-                <rect x="2" y="14" width="8" height="8" rx="2"/>
-                <circle cx="17.5" cy="17.5" r="3"/>
-                <path d="m21 21-1.5-1.5"/>
+            <button id="settingsMenuBtn" class="settings-btn" title="Beállítások" aria-label="Beállítások">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+                <circle cx="9" cy="6" r="3" fill="var(--bg-card)"/>
+                <circle cx="15" cy="12" r="3" fill="var(--bg-card)"/>
+                <circle cx="9" cy="18" r="3" fill="var(--bg-card)"/>
               </svg>
+              <span>Beállítások</span>
             </button>
-            <button id="catalogBtn" class="icon-btn" title="Tételek" aria-label="Tételek">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
-            </button>
-            <button id="themeToggle" class="icon-btn" title="Téma váltása" aria-label="Téma váltása">
-              <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
-              <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
-            </button>
+
+            <!-- Dropdown Menu -->
+            <div id="settingsDropdown" class="settings-dropdown hidden">
+              <div class="dropdown-item dropdown-theme-row">
+                <span>Téma</span>
+                <button id="themeToggle" class="theme-toggle-btn" title="Téma váltása" aria-label="Téma váltása">
+                  <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+                  <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+                </button>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button id="catalogBtn" class="dropdown-item dropdown-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
+                <span>Tételek</span>
+              </button>
+              <button id="manageCategoriesBtn" class="dropdown-item dropdown-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+                  <rect x="2" y="2" width="8" height="8" rx="2"/>
+                  <rect x="14" y="2" width="8" height="8" rx="2"/>
+                  <rect x="2" y="14" width="8" height="8" rx="2"/>
+                  <circle cx="17.5" cy="17.5" r="3"/>
+                  <path d="m21 21-1.5-1.5"/>
+                </svg>
+                <span>Kategóriák</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -203,7 +224,7 @@
 
   </div>
 
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {

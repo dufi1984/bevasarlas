@@ -97,6 +97,8 @@
   const purchasedCount         = $('purchasedCount');
   const togglePurchasedHeader  = $('togglePurchasedHeader');
   const purchasedSection       = document.querySelector('.purchased-section');
+  const settingsMenuBtn        = $('settingsMenuBtn');
+  const settingsDropdown       = $('settingsDropdown');
   const themeToggleBtn         = $('themeToggle');
   const catalogBtn             = $('catalogBtn');
   const catalogModal           = $('catalogModal');
@@ -173,7 +175,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=20');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=21');
       await navigator.serviceWorker.ready;
 
       if (reg.active) {
@@ -892,8 +894,36 @@
       renderPurchased();
     });
 
+    // Beállítások menü lenyitása és bezárása
+    if (settingsMenuBtn && settingsDropdown) {
+      settingsMenuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isHidden = settingsDropdown.classList.contains('hidden');
+        if (isHidden) {
+          settingsDropdown.classList.remove('hidden');
+          settingsMenuBtn.classList.add('active');
+        } else {
+          settingsDropdown.classList.add('hidden');
+          settingsMenuBtn.classList.remove('active');
+        }
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.header-actions')) {
+          settingsDropdown.classList.add('hidden');
+          settingsMenuBtn.classList.remove('active');
+        }
+      });
+    }
+
+    const closeSettingsDropdown = () => {
+      if (settingsDropdown) settingsDropdown.classList.add('hidden');
+      if (settingsMenuBtn) settingsMenuBtn.classList.remove('active');
+    };
+
     // Katalógus modal
     catalogBtn.addEventListener('click', () => {
+      closeSettingsDropdown();
       catalogSearchInput.value = '';
       renderCatalogModal();
       showModal(catalogModal);
@@ -903,7 +933,11 @@
     catalogSearchInput.addEventListener('input', renderCatalogModal);
 
     // Kategória modal
-    manageCategoriesBtn.addEventListener('click', () => { renderCategoriesModal(); showModal(categoriesModal); });
+    manageCategoriesBtn.addEventListener('click', () => {
+      closeSettingsDropdown();
+      renderCategoriesModal();
+      showModal(categoriesModal);
+    });
     closeCategoriesBtn.addEventListener('click', () => hideModal(categoriesModal));
     saveCategoriesModalBtn.addEventListener('click', saveCategoriesFromModal);
     categoriesModal.addEventListener('click', e => { if (e.target === categoriesModal) hideModal(categoriesModal); });
