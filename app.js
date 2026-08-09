@@ -99,7 +99,8 @@
   const purchasedSection       = document.querySelector('.purchased-section');
   const settingsMenuBtn        = $('settingsMenuBtn');
   const settingsDropdown       = $('settingsDropdown');
-  const themeToggleBtn         = $('themeToggle');
+  const themeLightBtn          = $('themeLightBtn');
+  const themeDarkBtn           = $('themeDarkBtn');
   const catalogBtn             = $('catalogBtn');
   const catalogModal           = $('catalogModal');
   const closeCatalogBtn        = $('closeCatalogBtn');
@@ -175,7 +176,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=21');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=22');
       await navigator.serviceWorker.ready;
 
       if (reg.active) {
@@ -424,10 +425,14 @@
   // =========================================================================
   // THEME
   // =========================================================================
-  function toggleTheme() {
-    theme = theme === 'dark' ? 'light' : 'dark';
+  function setTheme(newTheme) {
+    theme = newTheme;
     html.setAttribute('data-theme', theme);
     localStorage.setItem(SK.THEME, theme);
+  }
+
+  function toggleTheme() {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   }
 
   // =========================================================================
@@ -840,7 +845,8 @@
   // EVENT LISTENERS
   // =========================================================================
   function setupEvents() {
-    themeToggleBtn.addEventListener('click', toggleTheme);
+    if (themeLightBtn) themeLightBtn.addEventListener('click', () => setTheme('light'));
+    if (themeDarkBtn)  themeDarkBtn.addEventListener('click',  () => setTheme('dark'));
 
     // User gesture trigger for iOS push registration
     const triggerPushSetup = () => {
