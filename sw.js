@@ -1,5 +1,5 @@
 // Service Worker for Bevásárló Lista PWA & Web Push Notifications
-const CACHE_NAME = 'bevasarlas-pwa-v8';
+const CACHE_NAME = 'bevasarlas-pwa-v9';
 const WORKER_URL = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
 const ASSETS = [
   './',
@@ -57,31 +57,37 @@ self.addEventListener('push', event => {
   const room = currentRoom || 'otthon';
   const iconUrl = new URL('icon-192.png', self.location.href).href;
 
-  let messagePromise;
+  let notifyPromise;
   if (event && event.data) {
     try {
       const data = event.data.json();
-      messagePromise = Promise.resolve(data.message || event.data.text());
+      notifyPromise = Promise.resolve({
+        title: data.title || 'Bevásárló lista',
+        message: data.message || event.data.text()
+      });
     } catch (e) {
-      messagePromise = Promise.resolve(event.data.text());
+      notifyPromise = Promise.resolve({ title: 'Bevásárló lista', message: event.data.text() });
     }
   } else {
-    messagePromise = fetch(`${WORKER_URL}/notification?room=${encodeURIComponent(room)}`)
-      .then(r => r.ok ? r.json() : { message: 'A lista frissült!' })
-      .then(d => d.message || 'A lista frissült!')
-      .catch(() => 'A lista frissült!');
+    notifyPromise = fetch(`${WORKER_URL}/notification?room=${encodeURIComponent(room)}`)
+      .then(r => r.ok ? r.json() : { title: 'Bevásárló lista', message: 'A lista frissült!' })
+      .then(d => ({
+        title: d.title || 'Bevásárló lista',
+        message: d.message || 'A lista frissült!'
+      }))
+      .catch(() => ({ title: 'Bevásárló lista', message: 'A lista frissült!' }));
   }
 
   event.waitUntil(
-    messagePromise.then(message => {
-      return self.registration.showNotification('🛒 Bevásárló lista', {
+    notifyPromise.then(({ title, message }) => {
+      return self.registration.showNotification(title, {
         body: message,
         icon: iconUrl,
         badge: iconUrl,
         data: { url: self.location.href }
       });
-    }).catch(err => {
-      return self.registration.showNotification('🛒 Bevásárló lista', {
+    }).catch(() => {
+      return self.registration.showNotification('Bevásárló lista', {
         body: 'A lista frissült!',
         icon: iconUrl
       });

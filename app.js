@@ -73,8 +73,9 @@
   let typingTimer          = null;
   let isPushing            = false;
   let lastPushTs           = 0;
-  let notifyTimer          = null;  // 10s debounce push értesítéshez
-  let notifyChangeCount    = 0;     // hány változás halmozódott fel
+  let notifyTimer          = null;  // inaktivitás időzítő (12 mp)
+  let notifyMaxTimer       = null;  // biztonsági max korlát (45 mp)
+  let pendingNotifyChanges = [];    // felgyülemlett módosítások a görgetett ablakban
   let ownPushEndpoint      = null;  // saját eszköz push subscription endpoint-ja
   let pushSubscribed       = false; // sikeresen regisztrálódott-e a push token a DB-be
   let appStarted           = false; // első initén false, szoba belépés után true
@@ -176,7 +177,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=24');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=25');
       await navigator.serviceWorker.ready;
 
       if (reg.active) {
@@ -211,29 +212,61 @@
   }
 
 
-  // 10 másodperces debounce: ha több módosítás történik egymás után, csak egyszer küld értesítést
-  function schedulePushNotify(changeLabel) {
-    notifyChangeCount++;
+  // Gördülő (trailing) inaktivitási időzítő Push értesítéshez
+  function schedulePushNotify(actionType, itemName) {
+    if (!itemName) return;
+    pendingNotifyChanges.push({ type: actionType, name: itemName });
+
+    // 1. Inaktivitási időzítő: 12 mp az utolsó módosítás után
     clearTimeout(notifyTimer);
-    notifyTimer = setTimeout(async () => {
-      const count = notifyChangeCount;
-      notifyChangeCount = 0;
+    notifyTimer = setTimeout(() => {
+      sendBatchPushNotify();
+    }, 12000);
 
-      const message = count === 1
-        ? `${changeLabel} – ${activeRoom} lista`
-        : `${count} módosítás az ${activeRoom} listán`;
+    // 2. Biztonsági maximum korlát: folyamatos gépelés esetén is max 45 mp múlva kiküldi
+    if (!notifyMaxTimer) {
+      notifyMaxTimer = setTimeout(() => {
+        sendBatchPushNotify();
+      }, 45000);
+    }
+  }
 
-      try {
-        await fetch(`${WORKER_URL}/notify`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          // senderEndpoint: a Worker ezt az eszközt kihagyja a küldésből
-          body: JSON.stringify({ room: activeRoom, message, senderEndpoint: ownPushEndpoint })
-        });
-      } catch (e) {
-        // Hálózati hiba – csendben figyelmen kívül hagyjuk
+  async function sendBatchPushNotify() {
+    clearTimeout(notifyTimer);
+    clearTimeout(notifyMaxTimer);
+    notifyTimer = null;
+    notifyMaxTimer = null;
+
+    if (pendingNotifyChanges.length === 0) return;
+
+    const changes = [...pendingNotifyChanges];
+    pendingNotifyChanges = [];
+
+    const title = 'Bevásárló lista';
+    let message = '';
+
+    if (changes.length === 1) {
+      message = `${changes[0].type}: ${changes[0].name}`;
+    } else {
+      const totalCount = changes.length;
+      const visibleList = changes.slice(0, 5).map(c => `• ${c.type}: ${c.name}`).join('\n');
+      if (totalCount > 5) {
+        const remaining = totalCount - 5;
+        message = `Módosítások (${totalCount} tétel):\n${visibleList}\n• ...és további ${remaining} tétel`;
+      } else {
+        message = `Módosítások (${totalCount} tétel):\n${visibleList}`;
       }
-    }, NOTIFY_DELAY_MS);
+    }
+
+    try {
+      await fetch(`${WORKER_URL}/notify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ room: activeRoom, title, message, senderEndpoint: ownPushEndpoint })
+      });
+    } catch (e) {
+      // Hálózati hiba – csendben elkapjuk
+    }
   }
 
   // =========================================================================
@@ -488,7 +521,7 @@
     }
 
     saveState();
-    schedulePushNotify(`🛒 Hozzáadva: ${trimmed}`);
+    schedulePushNotify('Hozzáadva', trimmed);
     renderAll();
     searchInput.value = '';
     hideAC();
@@ -502,7 +535,7 @@
     if (item) {
       item.checked = !item.checked;
       saveState();
-      schedulePushNotify(item.checked ? `✅ Megvásárolva: ${item.name}` : `🔄 Visszahelyezve: ${item.name}`);
+      schedulePushNotify(item.checked ? 'Megvásárolva' : 'Visszahelyezve', item.name);
       renderAll();
     }
   }
@@ -514,7 +547,7 @@
     }
     items = items.filter(i => i.id !== id);
     saveState();
-    if (target) schedulePushNotify(`🗑️ Törölve: ${target.name}`);
+    if (target) schedulePushNotify('Törölve', target.name);
     renderAll();
   }
 
