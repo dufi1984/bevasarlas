@@ -177,7 +177,8 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=25');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=26');
+      await reg.update();
       await navigator.serviceWorker.ready;
 
       if (reg.active) {
