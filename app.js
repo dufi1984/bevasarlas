@@ -177,7 +177,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=26');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=27');
       await reg.update();
       await navigator.serviceWorker.ready;
 
@@ -243,19 +243,23 @@
     const changes = [...pendingNotifyChanges];
     pendingNotifyChanges = [];
 
-    const title = 'Bevásárló lista';
+    let title = '';
     let message = '';
 
     if (changes.length === 1) {
-      message = `${changes[0].type}: ${changes[0].name}`;
+      // 1 változás: a cím maga az akció ("Hozzáadva", "Törölve" stb.), a body a tétel neve
+      title   = changes[0].type;
+      message = changes[0].name;
     } else {
+      // Több változás: "X módosítás" a cím, a body a tételek listája
       const totalCount = changes.length;
+      title = `${totalCount} módosítás`;
       const visibleList = changes.slice(0, 5).map(c => `• ${c.type}: ${c.name}`).join('\n');
       if (totalCount > 5) {
         const remaining = totalCount - 5;
-        message = `Módosítások (${totalCount} tétel):\n${visibleList}\n• ...és további ${remaining} tétel`;
+        message = `${visibleList}\n• ...és további ${remaining} tétel`;
       } else {
-        message = `Módosítások (${totalCount} tétel):\n${visibleList}`;
+        message = visibleList;
       }
     }
 
