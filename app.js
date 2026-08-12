@@ -177,7 +177,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=27');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=28');
       await reg.update();
       await navigator.serviceWorker.ready;
 
@@ -247,13 +247,17 @@
     let message = '';
 
     if (changes.length === 1) {
-      // 1 változás: a cím maga az akció ("Hozzáadva", "Törölve" stb.), a body a tétel neve
-      title   = changes[0].type;
+      const typeActionMap = {
+        'Hozzáadva': '1 tétel hozzáadva',
+        'Törölve': '1 tétel törölve',
+        'Megvásárolva': '1 tétel megvásárolva',
+        'Visszahelyezve': '1 tétel visszahelyezve'
+      };
+      title   = typeActionMap[changes[0].type] || `1 tétel ${changes[0].type.toLowerCase()}`;
       message = changes[0].name;
     } else {
-      // Több változás: "X módosítás" a cím, a body a tételek listája
       const totalCount = changes.length;
-      title = `${totalCount} módosítás`;
+      title = `${totalCount} tétel módosítva`;
       const visibleList = changes.slice(0, 5).map(c => `• ${c.type}: ${c.name}`).join('\n');
       if (totalCount > 5) {
         const remaining = totalCount - 5;
