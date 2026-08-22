@@ -177,7 +177,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=28');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=29');
       await reg.update();
       await navigator.serviceWorker.ready;
 
@@ -717,11 +717,12 @@
     const target = catalog.find(c => c.id === id);
     if (target) {
       items = items.filter(i => i.name.toLowerCase() !== target.name.toLowerCase());
+      catalog = catalog.filter(c => c.id !== id);
+      saveState();
+      schedulePushNotify('Törölve', target.name);
+      renderAll();
+      renderCatalogModal();
     }
-    catalog = catalog.filter(c => c.id !== id);
-    saveState();
-    renderAll();
-    renderCatalogModal();
   }
 
   function renderCatalogModal() {
