@@ -14,9 +14,23 @@
   const POLL_MS    = 4000;
 
   // Push értesítések
-  const WORKER_URL      = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
+  const WORKER_URL       = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
   const VAPID_PUBLIC_KEY = 'BPYMM3cjcVvoTir84pHOEXMnDbuk8nVgtelRIUapdnaYBTv7vJ7b8nKSlLFPSuFymGU1euGx3zyxi4DO-jymrNI';
-  const NOTIFY_DELAY_MS  = 5000; // 5 másodperces debounce
+  const NOTIFY_DELAY_MS  = 5000;
+
+  // Angol akció-kulcsok → magyar megjelenítési felirat (értesítés szövegekhez)
+  const ACTION_LABELS = {
+    added:     'Hozzáadva',
+    deleted:   'Törölve',
+    purchased: 'Megvásárolva',
+    restored:  'Visszahelyezve'
+  };
+  const ACTION_TITLES = {
+    added:     '1 tétel hozzáadva',
+    deleted:   '1 tétel törölve',
+    purchased: '1 tétel megvásárolva',
+    restored:  '1 tétel visszahelyezve'
+  };
 
   // =========================================================================
   // LOCAL STORAGE KEYS
@@ -247,18 +261,14 @@
     let message = '';
 
     if (changes.length === 1) {
-      const typeActionMap = {
-        'Hozzáadva': '1 tétel hozzáadva',
-        'Törölve': '1 tétel törölve',
-        'Megvásárolva': '1 tétel megvásárolva',
-        'Visszahelyezve': '1 tétel visszahelyezve'
-      };
-      title   = typeActionMap[changes[0].type] || `1 tétel ${changes[0].type.toLowerCase()}`;
+      title   = ACTION_TITLES[changes[0].type] ?? `1 tétel ${changes[0].type}`;
       message = changes[0].name;
     } else {
       const totalCount = changes.length;
       title = `${totalCount} tétel módosítva`;
-      const visibleList = changes.slice(0, 5).map(c => `• ${c.type}: ${c.name}`).join('\n');
+      const visibleList = changes.slice(0, 5)
+        .map(c => `• ${ACTION_LABELS[c.type] ?? c.type}: ${c.name}`)
+        .join('\n');
       if (totalCount > 5) {
         const remaining = totalCount - 5;
         message = `${visibleList}\n• ...és további ${remaining} tétel`;
@@ -539,7 +549,7 @@
     }
 
     saveState();
-    schedulePushNotify('Hozzáadva', trimmed);
+    schedulePushNotify('added', trimmed);
     renderAll();
     searchInput.value = '';
     hideAC();
@@ -553,7 +563,7 @@
     if (item) {
       item.checked = !item.checked;
       saveState();
-      schedulePushNotify(item.checked ? 'Megvásárolva' : 'Visszahelyezve', item.name);
+      schedulePushNotify(item.checked ? 'purchased' : 'restored', item.name);
       renderAll();
     }
   }
@@ -565,7 +575,7 @@
     }
     items = items.filter(i => i.id !== id);
     saveState();
-    if (target) schedulePushNotify('Törölve', target.name);
+    if (target) schedulePushNotify('deleted', target.name);
     renderAll();
   }
 
@@ -728,7 +738,7 @@
       items = items.filter(i => i.name.toLowerCase() !== target.name.toLowerCase());
       catalog = catalog.filter(c => c.id !== id);
       saveState();
-      schedulePushNotify('Törölve', target.name);
+      schedulePushNotify('deleted', target.name);
       renderAll();
       renderCatalogModal();
     }
