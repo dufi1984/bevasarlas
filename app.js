@@ -177,7 +177,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=29');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=30');
       await reg.update();
       await navigator.serviceWorker.ready;
 
@@ -265,6 +265,15 @@
       } else {
         message = visibleList;
       }
+    }
+
+    // Ha az ownPushEndpoint még nincs beállítva (pl. push setup még fut), lekérjük most
+    if (!ownPushEndpoint && 'serviceWorker' in navigator) {
+      try {
+        const swReg = await navigator.serviceWorker.ready;
+        const sub = await swReg.pushManager.getSubscription();
+        if (sub) ownPushEndpoint = sub.endpoint;
+      } catch (e) { /* csendben */ }
     }
 
     try {
