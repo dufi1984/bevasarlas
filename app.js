@@ -16,7 +16,6 @@
   // Push értesítések
   const WORKER_URL       = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
   const VAPID_PUBLIC_KEY = 'BPYMM3cjcVvoTir84pHOEXMnDbuk8nVgtelRIUapdnaYBTv7vJ7b8nKSlLFPSuFymGU1euGx3zyxi4DO-jymrNI';
-  const NOTIFY_DELAY_MS  = 5000;
 
   // Angol akció-kulcsok → magyar megjelenítési felirat (értesítés szövegekhez)
   const ACTION_LABELS = {
@@ -191,7 +190,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=30');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=31');
       await reg.update();
       await navigator.serviceWorker.ready;
 
@@ -278,7 +277,7 @@
     }
 
     // Ha az ownPushEndpoint még nincs beállítva (pl. push setup még fut), lekérjük most
-    if (!ownPushEndpoint && 'serviceWorker' in navigator) {
+    if (!ownPushEndpoint && ('serviceWorker' in navigator)) {
       try {
         const swReg = await navigator.serviceWorker.ready;
         const sub = await swReg.pushManager.getSubscription();
@@ -492,10 +491,6 @@
     localStorage.setItem(SK.THEME, theme);
   }
 
-  function toggleTheme() {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
-  }
-
   // =========================================================================
   // KATEGÓRIA CHIPEK
   // =========================================================================
@@ -566,17 +561,6 @@
       schedulePushNotify(item.checked ? 'purchased' : 'restored', item.name);
       renderAll();
     }
-  }
-
-  function deleteItem(id) {
-    const target = items.find(i => i.id === id);
-    if (target) {
-      catalog = catalog.filter(c => c.name.toLowerCase() !== target.name.toLowerCase());
-    }
-    items = items.filter(i => i.id !== id);
-    saveState();
-    if (target) schedulePushNotify('deleted', target.name);
-    renderAll();
   }
 
   // =========================================================================
@@ -1056,7 +1040,8 @@
 
     if (joinRoomBtn) {
       joinRoomBtn.addEventListener('click', () => {
-        const inputVal = (roomInput.value.trim() || 'otthon').toLowerCase();
+        const inputVal = roomInput.value.trim().toLowerCase();
+        if (!inputVal) return; // Üres név nem engedélyezett
         activeRoom = inputVal;
         localStorage.setItem('bev_active_room_v1', activeRoom);
         hideModal(roomModal);

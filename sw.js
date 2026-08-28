@@ -1,5 +1,5 @@
 // Service Worker for Bevásárló Lista PWA & Web Push Notifications
-const CACHE_NAME = 'bevasarlas-pwa-v14';
+const CACHE_NAME = 'bevasarlas-pwa-v15';
 const WORKER_URL = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
 const ASSETS = [
   './',
@@ -13,7 +13,7 @@ const ASSETS = [
 ];
 
 // Current room (updated via postMessage from app.js)
-let currentRoom = 'otthon';
+let currentRoom = null;
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -31,9 +31,14 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
-// Fetch handler: Network First, fallback to cache
+// Fetch handler: Network First, fallback to cache – CSAK saját origin asset-ekre
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  // Külső API hívásokat (Gist, Cloudflare Worker) NEM cache-eljük
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     fetch(event.request)
       .then(response => {
@@ -48,13 +53,12 @@ self.addEventListener('fetch', event => {
 // Message from app.js: update current room
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SET_ROOM') {
-    currentRoom = event.data.room || 'otthon';
+    currentRoom = event.data.room || null;
   }
 });
 
 // Push notification received
 self.addEventListener('push', event => {
-  const room = currentRoom || 'otthon';
   const iconUrl = new URL('icon-192.png', self.location.href).href;
 
   let notifyPromise;
@@ -63,19 +67,25 @@ self.addEventListener('push', event => {
       const data = event.data.json();
       notifyPromise = Promise.resolve({
         title: data.title || 'Bevásárló lista',
-        message: data.message || event.data.text()
+        message: data.message || 'A lista frissült!'
       });
     } catch (e) {
-      notifyPromise = Promise.resolve({ title: 'Bevásárló lista', message: event.data.text() });
+      // Ha a JSON parse nem sikerül, próbáljuk szövegként
+      const text = event.data ? event.data.text() : 'A lista frissült!';
+      notifyPromise = Promise.resolve({ title: 'Bevásárló lista', message: text });
     }
-  } else {
-    notifyPromise = fetch(`${WORKER_URL}/notification?room=${encodeURIComponent(room)}`)
+  } else if (currentRoom) {
+    // Üres push: lekérjük a legutóbbi értesítés szövegét a Workerből
+    notifyPromise = fetch(`${WORKER_URL}/notification?room=${encodeURIComponent(currentRoom)}`)
       .then(r => r.ok ? r.json() : { title: 'Bevásárló lista', message: 'A lista frissült!' })
       .then(d => ({
         title: d.title || 'Bevásárló lista',
         message: d.message || 'A lista frissült!'
       }))
       .catch(() => ({ title: 'Bevásárló lista', message: 'A lista frissült!' }));
+  } else {
+    // Nincs room beállítva – generikus értesítés
+    notifyPromise = Promise.resolve({ title: 'Bevásárló lista', message: 'A lista frissült!' });
   }
 
   event.waitUntil(
