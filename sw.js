@@ -1,6 +1,7 @@
 // Service Worker for Bevásárló Lista PWA & Web Push Notifications
-const CACHE_NAME = 'bevasarlas-pwa-v15';
-const WORKER_URL = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
+const CACHE_NAME  = 'bevasarlas-pwa-v16';
+const CONFIG_CACHE = 'bevasarlas-config';
+const WORKER_URL  = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
 const ASSETS = [
   './',
   './index.html',
@@ -12,7 +13,7 @@ const ASSETS = [
   './icon-512.png'
 ];
 
-// Current room (updated via postMessage from app.js)
+// In-memory room (may be lost on SW restart – persistent backup in CONFIG_CACHE)
 let currentRoom = null;
 
 self.addEventListener('install', event => {
@@ -25,7 +26,11 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(
+        keys
+          .filter(k => k !== CACHE_NAME && k !== CONFIG_CACHE)
+          .map(k => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
@@ -50,12 +55,32 @@ self.addEventListener('fetch', event => {
   );
 });
 
-// Message from app.js: update current room
+// Message from app.js: update current room + persist to cache
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'SET_ROOM') {
     currentRoom = event.data.room || null;
+    // Mentés Cache API-ba – túléli az SW újraindítást (iOS push wakeup esetén)
+    if (currentRoom) {
+      caches.open(CONFIG_CACHE).then(cache => {
+        cache.put('__room__', new Response(currentRoom));
+      });
+    }
   }
 });
+
+// Room név visszaolvasása Cache-ből (ha az SW újraindult és currentRoom null)
+async function getRoom() {
+  if (currentRoom) return currentRoom;
+  try {
+    const cache = await caches.open(CONFIG_CACHE);
+    const resp = await cache.match('__room__');
+    if (resp) {
+      currentRoom = await resp.text();
+      return currentRoom;
+    }
+  } catch (e) { /* fallback */ }
+  return null;
+}
 
 // Push notification received
 self.addEventListener('push', event => {
@@ -70,22 +95,23 @@ self.addEventListener('push', event => {
         message: data.message || 'A lista frissült!'
       });
     } catch (e) {
-      // Ha a JSON parse nem sikerül, próbáljuk szövegként
       const text = event.data ? event.data.text() : 'A lista frissült!';
       notifyPromise = Promise.resolve({ title: 'Bevásárló lista', message: text });
     }
-  } else if (currentRoom) {
-    // Üres push: lekérjük a legutóbbi értesítés szövegét a Workerből
-    notifyPromise = fetch(`${WORKER_URL}/notification?room=${encodeURIComponent(currentRoom)}`)
-      .then(r => r.ok ? r.json() : { title: 'Bevásárló lista', message: 'A lista frissült!' })
-      .then(d => ({
-        title: d.title || 'Bevásárló lista',
-        message: d.message || 'A lista frissült!'
-      }))
-      .catch(() => ({ title: 'Bevásárló lista', message: 'A lista frissült!' }));
   } else {
-    // Nincs room beállítva – generikus értesítés
-    notifyPromise = Promise.resolve({ title: 'Bevásárló lista', message: 'A lista frissült!' });
+    // Üres push: lekérjük a room-ot a cache-ből, majd a notification szöveget a Workerből
+    notifyPromise = getRoom().then(room => {
+      if (!room) {
+        return { title: 'Bevásárló lista', message: 'A lista frissült!' };
+      }
+      return fetch(`${WORKER_URL}/notification?room=${encodeURIComponent(room)}`)
+        .then(r => r.ok ? r.json() : { title: 'Bevásárló lista', message: 'A lista frissült!' })
+        .then(d => ({
+          title: d.title || 'Bevásárló lista',
+          message: d.message || 'A lista frissült!'
+        }))
+        .catch(() => ({ title: 'Bevásárló lista', message: 'A lista frissült!' }));
+    });
   }
 
   event.waitUntil(
