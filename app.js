@@ -190,7 +190,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=32');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=33');
       await reg.update();
       await navigator.serviceWorker.ready;
 
@@ -556,7 +556,7 @@
   function toggleChecked(id) {
     const item = items.find(i => i.id === id);
     if (item) {
-      item.checked = !item.checked;
+      item.checked = !item.checked; if (item.checked) item.purchasedAt = Date.now();
       saveState();
       schedulePushNotify(item.checked ? 'purchased' : 'restored', item.name);
       renderAll();
@@ -684,7 +684,7 @@
       purchasedEmpty.classList.remove('hidden');
     } else {
       purchasedEmpty.classList.add('hidden');
-      const sorted = sortItemsByCatAndName(purchased);
+      const sorted = [...purchased].sort((a, b) => (b.purchasedAt || 0) - (a.purchasedAt || 0) || a.name.localeCompare(b.name, 'hu'));
       sorted.forEach(item => purchasedList.appendChild(makeItemCard(item)));
     }
     purchasedSection.classList.toggle('collapsed', isPurchasedCollapsed);
