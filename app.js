@@ -190,7 +190,7 @@
       }
       if (permission !== 'granted') return;
 
-      const reg = await navigator.serviceWorker.register('./sw.js?v=33');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=34');
       await reg.update();
       await navigator.serviceWorker.ready;
 
@@ -416,7 +416,29 @@
       const localTs  = parseInt(localStorage.getItem(getRoomSK(SK.TS)) || '0', 10);
 
       if (remoteTs > localTs && remoteTs > lastPushTs) {
-        if (roomData.items)      items      = roomData.items;
+        if (roomData.items) {
+          const localMap = new Map(items.map(i => [i.id || i.name.toLowerCase(), i]));
+          const notifMsg = (roomData.lastNotification?.message || '').toLowerCase();
+          const notifTs  = roomData.lastNotification?.ts || remoteTs || Date.now();
+
+          roomData.items.forEach(remoteItem => {
+            if (remoteItem.checked) {
+              if (!remoteItem.purchasedAt) {
+                const localMatch = localMap.get(remoteItem.id || remoteItem.name.toLowerCase());
+                if (localMatch && !localMatch.checked) {
+                  remoteItem.purchasedAt = remoteTs || Date.now();
+                } else if (localMatch && localMatch.purchasedAt) {
+                  remoteItem.purchasedAt = localMatch.purchasedAt;
+                } else if (notifMsg && notifMsg.includes(remoteItem.name.toLowerCase())) {
+                  remoteItem.purchasedAt = notifTs;
+                }
+              }
+            } else {
+              delete remoteItem.purchasedAt;
+            }
+          });
+          items = roomData.items;
+        }
         if (roomData.catalog)    catalog    = roomData.catalog;
         if (roomData.categories && roomData.categories.length > 0)
           categories = roomData.categories;
@@ -424,6 +446,22 @@
         sortCats();
         renderColorChips();
         renderAll();
+      }
+
+      if (roomData.lastNotification?.message && items.length > 0) {
+        const notifMsg = roomData.lastNotification.message.toLowerCase();
+        const notifTs  = roomData.lastNotification.ts || remoteTs || Date.now();
+        let patched = false;
+        items.forEach(item => {
+          if (item.checked && !item.purchasedAt && notifMsg.includes(item.name.toLowerCase())) {
+            item.purchasedAt = notifTs;
+            patched = true;
+          }
+        });
+        if (patched) {
+          saveLocal();
+          renderPurchased();
+        }
       }
     })
     .catch(() => {});
@@ -539,6 +577,7 @@
     if (idx !== -1) {
       items[idx].checked = false;
       items[idx].addedAt = Date.now();
+      delete items[idx].purchasedAt;
     } else {
       items.unshift({ id: uid(), name: trimmed, colorId, checked: false, addedAt: Date.now() });
     }
@@ -556,7 +595,12 @@
   function toggleChecked(id) {
     const item = items.find(i => i.id === id);
     if (item) {
-      item.checked = !item.checked; if (item.checked) item.purchasedAt = Date.now();
+      item.checked = !item.checked;
+      if (item.checked) {
+        item.purchasedAt = Date.now();
+      } else {
+        delete item.purchasedAt;
+      }
       saveState();
       schedulePushNotify(item.checked ? 'purchased' : 'restored', item.name);
       renderAll();
@@ -934,6 +978,19 @@
     };
     window.addEventListener('touchstart', triggerPushSetup, { once: true });
     window.addEventListener('click', triggerPushSetup, { once: true });
+
+    // App előtérbe kerülésekor azonnali szinkronizáció + SW frissítés ellenőrzés
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        fetchGist();
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistration().then(reg => reg?.update()).catch(() => {});
+        }
+      }
+    });
+    window.addEventListener('focus', () => {
+      fetchGist();
+    });
 
     const brandLogo = $('brandLogo');
     if (brandLogo) {
