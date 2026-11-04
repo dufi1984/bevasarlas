@@ -184,19 +184,19 @@
     if (!activeRoom) return;
 
     try {
-      let permission = Notification.permission;
-      if (permission === 'default') {
-        permission = await Notification.requestPermission();
-      }
-      if (permission !== 'granted') return;
-
-      const reg = await navigator.serviceWorker.register('./sw.js?v=34');
+      const reg = await navigator.serviceWorker.register('./sw.js?v=35');
       await reg.update();
       await navigator.serviceWorker.ready;
 
       if (reg.active) {
         reg.active.postMessage({ type: 'SET_ROOM', room: activeRoom });
       }
+
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
+      if (permission !== 'granted') return;
 
       let subscription = await reg.pushManager.getSubscription();
       if (!subscription) {
@@ -416,6 +416,7 @@
       const localTs  = parseInt(localStorage.getItem(getRoomSK(SK.TS)) || '0', 10);
 
       if (remoteTs > localTs && remoteTs > lastPushTs) {
+        let needsPushBack = false;
         if (roomData.items) {
           const localMap = new Map(items.map(i => [i.id || i.name.toLowerCase(), i]));
           const notifMsg = (roomData.lastNotification?.message || '').toLowerCase();
@@ -427,10 +428,13 @@
                 const localMatch = localMap.get(remoteItem.id || remoteItem.name.toLowerCase());
                 if (localMatch && !localMatch.checked) {
                   remoteItem.purchasedAt = remoteTs || Date.now();
+                  needsPushBack = true;
                 } else if (localMatch && localMatch.purchasedAt) {
                   remoteItem.purchasedAt = localMatch.purchasedAt;
+                  needsPushBack = true;
                 } else if (notifMsg && notifMsg.includes(remoteItem.name.toLowerCase())) {
                   remoteItem.purchasedAt = notifTs;
+                  needsPushBack = true;
                 }
               }
             } else {
@@ -442,24 +446,35 @@
         if (roomData.catalog)    catalog    = roomData.catalog;
         if (roomData.categories && roomData.categories.length > 0)
           categories = roomData.categories;
-        saveLocal();
+        if (needsPushBack) {
+          saveState();
+        } else {
+          saveLocal();
+        }
         sortCats();
         renderColorChips();
         renderAll();
-      }
+      } else if (roomData.items && items.length > 0) {
+        const remoteMap = new Map(roomData.items.map(i => [i.id || i.name.toLowerCase(), i]));
+        const notifMsg = (roomData.lastNotification?.message || '').toLowerCase();
+        const notifTs  = roomData.lastNotification?.ts || remoteTs || Date.now();
+        let needsSync = false;
 
-      if (roomData.lastNotification?.message && items.length > 0) {
-        const notifMsg = roomData.lastNotification.message.toLowerCase();
-        const notifTs  = roomData.lastNotification.ts || remoteTs || Date.now();
-        let patched = false;
         items.forEach(item => {
-          if (item.checked && !item.purchasedAt && notifMsg.includes(item.name.toLowerCase())) {
-            item.purchasedAt = notifTs;
-            patched = true;
+          if (item.checked) {
+            if (!item.purchasedAt && notifMsg && notifMsg.includes(item.name.toLowerCase())) {
+              item.purchasedAt = notifTs;
+              needsSync = true;
+            }
+            const rItem = remoteMap.get(item.id || item.name.toLowerCase());
+            if (item.purchasedAt && rItem && rItem.checked && !rItem.purchasedAt) {
+              needsSync = true;
+            }
           }
         });
-        if (patched) {
-          saveLocal();
+
+        if (needsSync) {
+          saveState();
           renderPurchased();
         }
       }
@@ -994,9 +1009,19 @@
 
     const brandLogo = $('brandLogo');
     if (brandLogo) {
-      brandLogo.addEventListener('click', () => {
-        setupPushNotifications();
-        fetchGist();
+      brandLogo.addEventListener('click', async () => {
+        try {
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(
+              keys.filter(k => k !== 'bevasarlas-config').map(k => caches.delete(k))
+            );
+          }
+          if ('serviceWorker' in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.update()));
+          }
+        } catch (e) {}
         window.location.reload();
       });
     }

@@ -1,5 +1,5 @@
 // Service Worker for Bevásárló Lista PWA & Web Push Notifications
-const CACHE_NAME  = 'bevasarlas-pwa-v18';
+const CACHE_NAME  = 'bevasarlas-pwa-v19';
 const CONFIG_CACHE = 'bevasarlas-config';
 const WORKER_URL  = 'https://bevasarlas-notify.tamas-duffek.workers.dev';
 const ASSETS = [
@@ -45,7 +45,7 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-cache' })
       .then(response => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
